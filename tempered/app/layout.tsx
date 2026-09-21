@@ -21,9 +21,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-screen bg-transparent">
+        <div className="min-h-screen w-full overflow-y-auto bg-linear-to-br from-[#121212] to-[#2e4484]">
+          {children}
+        </div>
+      </body>
     </html>
   );
 }

@@ -45,7 +45,7 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center overflow-x-hidden bg-linear-to-br from-[#121212] to-[#2e4484] px-4 py-6 sm:px-6 sm:py-10">
+    <main className="flex min-h-screen w-full items-center justify-center overflow-x-hidden px-4 py-6 sm:px-6 sm:py-10">
       <section className="w-full max-w-2xl rounded-3xl border border-white/25 bg-white/10 p-6 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-10 md:p-12">
         <div className="mx-auto w-full max-w-md">
           <h1 className="font-display text-center text-3xl uppercase tracking-[0.08em] text-[#adc0fa] sm:text-4xl sm:tracking-[0.1em] md:text-5xl">

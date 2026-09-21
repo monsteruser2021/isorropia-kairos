@@ -102,6 +102,13 @@ export default function DistribucionDetalle({ distributionId }: Props) {
     [incomes],
   );
 
+  const percentageTotal = useMemo(
+    () => Object.values(percentages).reduce((sum, value) => sum + value, 0),
+    [percentages],
+  );
+
+  const percentagesAreComplete = Math.abs(percentageTotal - 100) < 0.0001;
+
   const resetForm = () => {
     setDescription("");
     setTotalBs("");
@@ -122,6 +129,10 @@ export default function DistribucionDetalle({ distributionId }: Props) {
     const amount = Number(totalBs);
     if (!isOwner || !description.trim() || !Number.isFinite(amount) || amount <= 0) {
       setErrorMsg("Completa una descripción y un monto válido.");
+      return;
+    }
+    if (!percentagesAreComplete) {
+      setErrorMsg(`Los porcentajes deben sumar exactamente 100%. Actualmente suman ${percentageTotal.toFixed(2)}%.`);
       return;
     }
 
@@ -201,10 +212,13 @@ export default function DistribucionDetalle({ distributionId }: Props) {
           <div className="mt-5 grid gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
             <label className="text-xs uppercase text-white/70">Descripción<input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Ej. Quincena" className="mt-2 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-4 py-3 text-sm normal-case text-white outline-none" /></label>
             <label className="text-xs uppercase text-white/70">Monto total en Bs<input value={totalBs} onChange={(event) => setTotalBs(event.target.value)} type="number" min="0" step="0.01" placeholder="100" className="mt-2 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-4 py-3 text-sm text-white outline-none" /></label>
-            <button disabled={saving} type="submit" className="rounded-xl bg-[#adc0fa] px-5 py-3 text-xs uppercase text-[#121212] hover:bg-white disabled:opacity-50">{saving ? "Guardando..." : editingId ? "Guardar" : "Agregar"}</button>
+            <button disabled={saving || !percentagesAreComplete} type="submit" className="rounded-xl bg-[#adc0fa] px-5 py-3 text-xs uppercase text-[#121212] hover:bg-white disabled:cursor-not-allowed disabled:opacity-50">{saving ? "Guardando..." : editingId ? "Guardar" : "Agregar"}</button>
           </div>
           <div className="mt-6 border-t border-white/10 pt-5">
             <h3 className="text-xs uppercase text-white/60">Porcentajes de este ingreso</h3>
+            <p className={`mt-2 text-sm ${percentagesAreComplete ? "text-emerald-300" : "text-amber-300"}`}>
+              Total asignado: {percentageTotal.toFixed(2)}% {percentagesAreComplete ? "(completo)" : "(debe ser exactamente 100%)"}
+            </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {categories.map((category) => (
                 <label key={category} className="flex items-center justify-between gap-3 text-sm text-white/80">
@@ -214,6 +228,7 @@ export default function DistribucionDetalle({ distributionId }: Props) {
               ))}
             </div>
           </div>
+          {!percentagesAreComplete && <p className="mt-4 text-xs text-amber-300">Distribuye el 100% del ingreso antes de guardar.</p>}
         </form>
 
         <div className="mx-auto mt-8 max-w-4xl">

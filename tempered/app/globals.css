@@ -15,7 +15,9 @@
 }
 
 body {
-  background: linear-gradient(to bottom right, #121212, #2e4484);
+  min-height: 100%;
+  margin: 0;
+  background: transparent;
   color: var(--foreground);
   font-family: "Zen Dots", sans-serif;
 }
