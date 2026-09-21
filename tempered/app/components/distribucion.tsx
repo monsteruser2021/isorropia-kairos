@@ -1,13 +1,22 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { onAuthStateChanged, type User } from "firebase/auth";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+} from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 
-type Distribution = {
-  id: number;
-  month: number;
-  year: number;
-};
+type Distribution = { id: string; month: number; year: number };
 
 const months = [
   "Enero",
@@ -27,11 +36,53 @@ const months = [
 const years = Array.from({ length: 11 }, (_, index) => 2021 + index);
 
 export default function Distribucion() {
+  const [user, setUser] = useState<User | null>(null);
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [distributions, setDistributions] = useState<Distribution[]>([]);
   const [month, setMonth] = useState(new Date().getMonth());
   const [year, setYear] = useState(new Date().getFullYear());
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (authenticatedUser) => {
+      setUser(authenticatedUser);
+      if (!authenticatedUser) {
+        const sessionCookie = document.cookie
+          .split("; ")
+          .find((cookie) => cookie.startsWith("tempered_user_id="));
+        setSessionUserId(sessionCookie?.split("=")[1] ?? null);
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
+  const currentUserId = user?.uid ?? sessionUserId;
+
+  useEffect(() => {
+    if (!currentUserId) {
+      return;
+    }
+
+    const distributionsQuery = query(
+      collection(db, "distributions"),
+      where("userId", "==", currentUserId),
+    );
+
+    return onSnapshot(
+      distributionsQuery,
+      (snapshot) => {
+        setDistributions(snapshot.docs.map((item) => ({
+          id: item.id,
+          month: item.data().month as number,
+          year: item.data().year as number,
+        })));
+      },
+      () => setErrorMsg("No se pudieron cargar las distribuciones."),
+    );
+  }, [currentUserId]);
 
   const orderedDistributions = useMemo(
     () =>
@@ -42,26 +93,30 @@ export default function Distribucion() {
     [distributions],
   );
 
-  const saveDistribution = (event: React.FormEvent<HTMLFormElement>) => {
+  const saveDistribution = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    if (editingId === null) {
-      setDistributions((current) => [
-        ...current,
-        { id: Date.now(), month, year },
-      ]);
-    } else {
-      setDistributions((current) =>
-        current.map((distribution) =>
-          distribution.id === editingId
-            ? { ...distribution, month, year }
-            : distribution,
-        ),
-      );
+    if (!currentUserId) {
+      setErrorMsg("Debes iniciar sesión para continuar.");
+      return;
     }
 
-    setEditingId(null);
-    setPendingDeleteId(null);
+    try {
+      if (editingId) {
+        await updateDoc(doc(db, "distributions", editingId), { month, year });
+      } else {
+        await addDoc(collection(db, "distributions"), {
+          userId: currentUserId,
+          month,
+          year,
+          createdAt: serverTimestamp(),
+        });
+      }
+      setErrorMsg("");
+      setEditingId(null);
+      setPendingDeleteId(null);
+    } catch {
+      setErrorMsg("No se pudo guardar la distribución.");
+    }
   };
 
   const startEditing = (distribution: Distribution) => {
@@ -71,16 +126,18 @@ export default function Distribucion() {
     setPendingDeleteId(null);
   };
 
-  const confirmDelete = (id: number) => {
+  const confirmDelete = async (id: string) => {
     if (pendingDeleteId !== id) {
       setPendingDeleteId(id);
       return;
     }
 
-    setDistributions((current) =>
-      current.filter((distribution) => distribution.id !== id),
-    );
-    setPendingDeleteId(null);
+    try {
+      await deleteDoc(doc(db, "distributions", id));
+      setPendingDeleteId(null);
+    } catch {
+      setErrorMsg("No se pudo eliminar la distribución.");
+    }
   };
 
   return (
@@ -102,7 +159,19 @@ export default function Distribucion() {
           Distribución
         </h1>
 
-        <form
+        {errorMsg && (
+          <p className="mx-auto mt-6 max-w-4xl rounded-xl border border-red-500/50 bg-red-500/20 p-3 text-center text-sm text-red-200">
+            {errorMsg}
+          </p>
+        )}
+
+        {!currentUserId && (
+          <p className="mx-auto mt-10 max-w-4xl rounded-2xl border border-dashed border-white/25 p-8 text-center text-sm text-white/60">
+            Inicia sesión para cargar tus distribuciones.
+          </p>
+        )}
+
+        {currentUserId && <form
           onSubmit={saveDistribution}
           className="mx-auto mt-10 max-w-4xl rounded-2xl border border-white/15 bg-black/15 p-5 sm:p-6"
         >
@@ -159,9 +228,9 @@ export default function Distribucion() {
               {editingId === null ? "Crear" : "Guardar"}
             </button>
           </div>
-        </form>
+        </form>}
 
-        <div className="mx-auto mt-8 max-w-4xl">
+        {currentUserId && <div className="mx-auto mt-8 max-w-4xl">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm uppercase tracking-[0.08em] text-white/85">
               Distribuciones registradas
@@ -192,6 +261,12 @@ export default function Distribucion() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/distribucion/${distribution.id}`}
+                      className="rounded-lg bg-[#adc0fa] px-4 py-2 text-xs uppercase text-[#121212] transition hover:bg-white"
+                    >
+                      Gestionar
+                    </Link>
                     <button
                       type="button"
                       onClick={() => startEditing(distribution)}
@@ -231,7 +306,7 @@ export default function Distribucion() {
               ))}
             </div>
           )}
-        </div>
+        </div>}
       </section>
     </main>
   );

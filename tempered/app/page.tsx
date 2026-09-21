@@ -28,6 +28,7 @@ export default function Home() {
 
         if (userData.username === usernameInput && userData.password === passwordInput) {
           document.cookie = "tempered_session=authenticated; path=/; SameSite=Lax";
+          document.cookie = "tempered_user_id=cesc.8; path=/; SameSite=Lax";
           router.push("/menu");
         } else {
           setErrorMsg("Credenciales incorrectas. Verifica tus datos.");
