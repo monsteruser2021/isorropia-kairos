@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import {
-  addDoc,
   collection,
   deleteDoc,
   doc,
@@ -12,6 +11,7 @@ import {
   onSnapshot,
   query,
   serverTimestamp,
+  setDoc,
   updateDoc,
   where,
   writeBatch,
@@ -39,6 +39,7 @@ type PreviousTransaction = { category: string; incomeBs: number; expenseBs: numb
 
 const getSessionUserId = () => document.cookie.split("; ").find((item) => item.startsWith("tempered_user_id="))?.split("=")[1] ?? null;
 const periodValue = (year: number, month: number) => year * 12 + month;
+const periodDocumentId = (userId: string, year: number, month: number) => `period-${encodeURIComponent(userId)}-${year}-${String(month + 1).padStart(2, "0")}`;
 
 export default function Distribucion() {
   const [user, setUser] = useState<User | null>(null);
@@ -64,13 +65,43 @@ export default function Distribucion() {
   const currentUserId = user?.uid ?? sessionUserId;
 
   const createRollover = useCallback(async (available: Distribution[], userId: string) => {
-    if (rolloverInProgress.current || available.some((item) => item.year === currentYear && item.month === currentMonth && item.isAutomatic && item.name === "Restante")) return;
+    if (rolloverInProgress.current) return;
     rolloverInProgress.current = true;
     try {
-      const currentQuery = query(collection(db, "distributions"), where("userId", "==", userId), where("year", "==", currentYear), where("month", "==", currentMonth), where("name", "==", "Restante"));
-      if (!(await getDocs(currentQuery)).empty) return;
+      const currentDistributions = available.filter((item) => item.year === currentYear && item.month === currentMonth);
+      let currentDistribution = currentDistributions.find((item) => !item.isAutomatic);
+      if (!currentDistribution) {
+        const legacyRollover = currentDistributions.find((item) => item.isAutomatic);
+        if (legacyRollover) {
+          await updateDoc(doc(db, "distributions", legacyRollover.id), { name: "Distribución", isAutomatic: false, convertedFromRollover: true, updatedAt: serverTimestamp() });
+          currentDistribution = { ...legacyRollover, name: "Distribución", isAutomatic: false };
+        } else {
+          const distributionRef = doc(db, "distributions", periodDocumentId(userId, currentYear, currentMonth));
+          await setDoc(distributionRef, { name: "Distribución", userId, month: currentMonth, year: currentYear, isAutomatic: false, createdAt: serverTimestamp() }, { merge: true });
+          currentDistribution = { id: distributionRef.id, name: "Distribución", month: currentMonth, year: currentYear, isAutomatic: false };
+        }
+      }
 
-      const previous = available.filter((item) => periodValue(item.year, item.month) < currentPeriod).sort((a, b) => periodValue(b.year, b.month) - periodValue(a.year, a.month))[0];
+      const legacyDistributions = currentDistributions.filter((item) => item.isAutomatic && item.id !== currentDistribution.id);
+      if (legacyDistributions.length > 0) {
+        const migrationBatch = writeBatch(db);
+        for (const legacyDistribution of legacyDistributions) {
+          const legacyIncomes = await getDocs(collection(db, "distributions", legacyDistribution.id, "incomes"));
+          legacyIncomes.docs.forEach((income) => {
+            migrationBatch.set(doc(db, "distributions", currentDistribution.id, "incomes", income.id), income.data(), { merge: true });
+            migrationBatch.delete(income.ref);
+          });
+          migrationBatch.delete(doc(db, "distributions", legacyDistribution.id));
+        }
+        await migrationBatch.commit();
+      }
+
+      const incomeSnapshot = await getDocs(collection(db, "distributions", currentDistribution.id, "incomes"));
+      if (incomeSnapshot.docs.some((item) => item.data().isRollover === true)) return;
+
+      const previous = available
+        .filter((item) => periodValue(item.year, item.month) < currentPeriod)
+        .sort((first, second) => Number(first.isAutomatic) - Number(second.isAutomatic) || periodValue(second.year, second.month) - periodValue(first.year, first.month))[0];
       const balances = Object.fromEntries(categories.map((category) => [category, 0])) as Record<string, number>;
       if (previous) {
         const [incomeSnapshot, transactionSnapshot] = await Promise.all([
@@ -87,18 +118,17 @@ export default function Distribucion() {
         });
       }
 
-      const rolloverRef = doc(collection(db, "distributions"));
       const batch = writeBatch(db);
-      batch.set(rolloverRef, { name: "Restante", userId, month: currentMonth, year: currentYear, isAutomatic: true, sourceDistributionId: previous?.id ?? null, createdAt: serverTimestamp() });
+      batch.set(doc(db, "distributions", currentDistribution.id), { sourceDistributionId: previous?.id ?? null, rolloverCheckedAt: serverTimestamp() }, { merge: true });
       categories.forEach((category) => {
         const amount = Math.round(Math.max(0, balances[category]) * 100) / 100;
         if (amount <= 0) return;
-        const incomeRef = doc(collection(db, "distributions", rolloverRef.id, "incomes"));
-        batch.set(incomeRef, { description: `Restante: ${category}`, totalBs: amount, percentages: Object.fromEntries(categories.map((item) => [item, item === category ? 100 : 0])), isRollover: true, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+        const incomeRef = doc(db, "distributions", currentDistribution.id, "incomes", `rollover-${encodeURIComponent(category)}`);
+        batch.set(incomeRef, { description: `Restante del mes anterior: ${category}`, totalBs: amount, percentages: Object.fromEntries(categories.map((item) => [item, item === category ? 100 : 0])), isRollover: true, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }, { merge: true });
       });
       await batch.commit();
     } catch {
-      setErrorMsg("No se pudo crear automáticamente la distribución Restante.");
+      setErrorMsg("No se pudo preparar automáticamente la distribución del mes.");
     } finally {
       rolloverInProgress.current = false;
     }
@@ -121,25 +151,27 @@ export default function Distribucion() {
     event.preventDefault();
     if (!currentUserId) return setErrorMsg("Debes iniciar sesión para continuar.");
     if (!selectedPeriodIsValid) return setErrorMsg("Solo puedes crear distribuciones del mes actual o de meses anteriores.");
+    const duplicate = distributions.some((item) => item.id !== editingId && item.year === year && item.month === month && !item.isAutomatic);
+    if (duplicate) return setErrorMsg("Ya existe una distribución oficial para ese mes.");
     try {
       if (editingId) {
         const distribution = distributions.find((item) => item.id === editingId);
-        if (distribution?.isAutomatic) return setErrorMsg("La distribución Restante es automática y no se puede editar.");
+        if (distribution?.isAutomatic) return setErrorMsg("La distribución automática no se puede editar.");
         await updateDoc(doc(db, "distributions", editingId), { month, year });
       } else {
-        await addDoc(collection(db, "distributions"), { name: "Distribución", userId: currentUserId, month, year, isAutomatic: false, createdAt: serverTimestamp() });
+        await setDoc(doc(db, "distributions", periodDocumentId(currentUserId, year, month)), { name: "Distribución", userId: currentUserId, month, year, isAutomatic: false, createdAt: serverTimestamp() }, { merge: true });
       }
       setErrorMsg(""); setEditingId(null); setPendingDeleteId(null);
     } catch { setErrorMsg("No se pudo guardar la distribución."); }
   };
 
   const startEditing = (distribution: Distribution) => {
-    if (distribution.isAutomatic) return setErrorMsg("La distribución Restante se genera automáticamente y no se puede editar.");
+    if (distribution.isAutomatic) return setErrorMsg("La distribución automática no se puede editar.");
     setEditingId(distribution.id); setMonth(distribution.month); setYear(distribution.year); setPendingDeleteId(null);
   };
   const confirmDelete = async (id: string) => {
     const distribution = distributions.find((item) => item.id === id);
-    if (distribution?.isAutomatic) return setErrorMsg("La distribución Restante no se puede eliminar.");
+    if (distribution?.isAutomatic) return setErrorMsg("La distribución automática no se puede eliminar.");
     if (pendingDeleteId !== id) return setPendingDeleteId(id);
     try { await deleteDoc(doc(db, "distributions", id)); setPendingDeleteId(null); } catch { setErrorMsg("No se pudo eliminar la distribución."); }
   };
@@ -148,7 +180,7 @@ export default function Distribucion() {
     <main className="flex min-h-screen w-full items-center justify-center px-5 py-10">
       <section className="w-[90vw] max-w-7xl rounded-3xl border border-white/25 bg-white/10 p-6 text-white shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-10">
         <div className="flex items-center justify-between gap-4"><Link href="/menu" className="text-xs uppercase text-white/70 hover:text-white">Volver al menú</Link><span className="text-xs uppercase tracking-[0.15em] text-white/50">Gestión mensual</span></div>
-        <h1 className="font-display mt-10 text-center text-2xl uppercase tracking-[0.1em] text-[#adc0fa] sm:text-4xl">Distribución</h1>
+        <h1 className="font-display mt-10 text-center text-2xl uppercase tracking-widest text-[#adc0fa] sm:text-4xl">Distribución</h1>
         {errorMsg && <p className="mx-auto mt-6 max-w-4xl rounded-xl border border-red-500/50 bg-red-500/20 p-3 text-center text-sm text-red-200">{errorMsg}</p>}
         {!currentUserId ? <p className="mx-auto mt-10 max-w-4xl rounded-2xl border border-dashed border-white/25 p-8 text-center text-sm text-white/60">Inicia sesión para cargar tus distribuciones.</p> : <>
           <form onSubmit={saveDistribution} className="mx-auto mt-10 max-w-4xl rounded-2xl border border-white/15 bg-black/15 p-5 sm:p-6"><div className="mb-5 flex items-center justify-between gap-4"><h2 className="text-sm uppercase text-white/85">{editingId ? "Editar distribución" : "Nueva distribución"}</h2>{editingId && <button type="button" onClick={() => setEditingId(null)} className="text-xs uppercase text-white/60 hover:text-white">Cancelar</button>}</div><div className="grid gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end"><label className="text-xs uppercase text-white/70">Mes<select value={month} onChange={(event) => setMonth(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-4 py-3 text-sm text-white">{months.map((name, index) => <option key={name} value={index} disabled={year === currentYear && index > currentMonth}>{name}</option>)}</select></label><label className="text-xs uppercase text-white/70">Año<select value={year} onChange={(event) => { const nextYear = Number(event.target.value); setYear(nextYear); if (nextYear === currentYear && month > currentMonth) setMonth(currentMonth); }} className="mt-2 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-4 py-3 text-sm text-white">{years.map((value) => <option key={value} value={value}>{value}</option>)}</select></label><button type="submit" disabled={!selectedPeriodIsValid} className="rounded-xl bg-[#adc0fa] px-5 py-3 text-xs uppercase text-[#121212] hover:bg-white disabled:cursor-not-allowed disabled:opacity-50">{editingId ? "Guardar" : "Crear"}</button></div>{!selectedPeriodIsValid && <p className="mt-3 text-xs text-amber-300">No se permiten meses futuros.</p>}</form>
