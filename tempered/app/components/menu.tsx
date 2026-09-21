@@ -9,7 +9,7 @@ export default function Main() {
             Isorropia Kairos
           </h1>
 
-          <nav className="mt-16 grid gap-5 md:grid-cols-3" aria-label="Opciones principales">
+          <nav className="mt-16 grid gap-5 sm:grid-cols-2 md:grid-cols-4" aria-label="Opciones principales">
             <Link
               href="/distribucion"
               className="rounded-xl border border-white/25 bg-black/20 px-5 py-5 text-center text-sm uppercase text-white transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/70"
@@ -27,6 +27,12 @@ export default function Main() {
               className="rounded-xl border border-white/25 bg-black/20 px-5 py-5 text-center text-sm uppercase text-white transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/70"
             >
               Balance $
+            </Link>
+            <Link
+              href="/transfers"
+              className="rounded-xl border border-white/25 bg-black/20 px-5 py-5 text-center text-sm uppercase text-white transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/70"
+            >
+              Transferencias
             </Link>
           </nav>
         </div>
