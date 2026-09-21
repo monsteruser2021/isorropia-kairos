@@ -46,6 +46,11 @@ body {
   --theme-accent-soft: rgb(6 98 4 / 0.16);
 }
 
+.theme-mawina {
+  --theme-accent: #620404;
+  --theme-accent-soft: rgb(98 4 4 / 0.16);
+}
+
 .theme-isorropia .text-\[\#adc0fa\] {
   color: var(--theme-accent);
 }

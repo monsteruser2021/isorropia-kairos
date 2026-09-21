@@ -24,7 +24,9 @@ export default function SessionShell({ children }: { children: React.ReactNode }
   const isLoginPage = pathname === "/";
   const theme = pathname === "/" || pathname === "/menu"
     ? "theme-tempered"
-    : pathname.startsWith("/grobit")
+    : pathname.startsWith("/mawina")
+      ? "theme-mawina"
+      : pathname.startsWith("/grobit")
       ? "theme-grobit"
       : "theme-isorropia";
 

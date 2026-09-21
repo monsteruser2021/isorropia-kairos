@@ -13,6 +13,12 @@ const applications = [
     description: "Hábitos, próximamente",
     className: "border-[#066204]/70 bg-linear-to-br from-[#066204]/80 via-[#066204]/25 to-[#121212] hover:from-[#066204] hover:via-[#066204]/35",
   },
+  {
+    href: "/mawina",
+    name: "Mawina Kairos",
+    description: "Rutinas, próximamente",
+    className: "border-[#620404]/70 bg-linear-to-br from-[#620404]/80 via-[#620404]/25 to-[#121212] hover:from-[#620404] hover:via-[#620404]/35",
+  },
 ];
 
 export default function Main() {
@@ -28,13 +34,13 @@ export default function Main() {
             Selecciona una aplicación para continuar.
           </p>
 
-          <nav className="mt-12 grid gap-5 md:grid-cols-2" aria-label="Aplicaciones de Tempered">
+          <nav className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3" aria-label="Aplicaciones de Tempered">
             {applications.map((application) => {
               const content = (
                 <>
                   <span className="block text-xl uppercase tracking-[0.06em] text-white sm:text-2xl">{application.name}</span>
                   <span className="mt-4 block text-sm text-white/60">{application.description}</span>
-                  <span className="mt-10 block text-xs uppercase text-white/45">{application.href === "/grobit" ? "Vista previa" : "Abrir aplicación"}</span>
+                  <span className="mt-10 block text-xs uppercase text-white/45">{application.href === "/grobit" || application.href === "/mawina" ? "Vista previa" : "Abrir aplicación"}</span>
                 </>
               );
               const className = `min-h-44 rounded-2xl border p-7 text-left transition ${application.className}`;
