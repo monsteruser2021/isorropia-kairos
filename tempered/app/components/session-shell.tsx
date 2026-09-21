@@ -86,9 +86,9 @@ export default function SessionShell({ children }: { children: React.ReactNode }
           <button
             type="button"
             onClick={() => void handleLogout()}
-            className="min-h-11 rounded-xl border border-white/25 bg-black/20 px-4 py-2 text-xs uppercase text-white/80 transition hover:bg-white/15 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/70"
+            className="min-h-11 rounded-xl border border-white/45 bg-black/35 px-4 py-2 text-xs uppercase text-white shadow-lg shadow-black/20 transition hover:border-white hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white"
           >
-            Cerrar sesión
+            <span aria-hidden="true">↪</span> Cerrar sesión
           </button>
         </nav>
       )}

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import {
@@ -15,6 +14,7 @@ import {
   where,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import BackButton from "./back-button";
 
 const categories = [
   "Gastos básicos", "Fondo de emergencia", "Inversión", "Ahorro",
@@ -115,7 +115,7 @@ export default function BalanceBs() {
   return (
     <main className="flex min-h-screen items-center justify-center px-5 py-10">
       <section className="w-[90vw] max-w-7xl rounded-3xl border border-white/25 bg-white/10 p-6 text-white shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-10">
-        <Link href="/isorropia" className="text-xs uppercase text-white/70 hover:text-white">Volver al menú</Link>
+        <BackButton href="/isorropia">Volver al menú</BackButton>
         <h1 className="font-display mt-8 text-center text-2xl uppercase tracking-[0.1em] text-[#adc0fa] sm:text-4xl">Balance Bs</h1>
         {errorMsg && <p className="mx-auto mt-5 max-w-5xl rounded-xl border border-red-500/50 bg-red-500/20 p-3 text-center text-sm text-red-200">{errorMsg}</p>}
         <div className="mx-auto mt-8 max-w-5xl"><label className="text-xs uppercase text-white/70">Distribución seleccionada<select value={selectedId} onChange={(event) => { setSelectedId(event.target.value); resetForm(); }} className="mt-2 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-4 py-3 text-white">{distributions.length === 0 ? <option value="">No hay distribuciones creadas</option> : distributions.map((item) => <option key={item.id} value={item.id}>{monthNames[item.month]} {item.year}</option>)}</select></label></div>
@@ -169,5 +169,5 @@ export default function BalanceBs() {
 }
 
 function Message({ text }: { text: string }) {
-  return <main className="flex min-h-screen items-center justify-center px-5 py-10"><section className="w-[90vw] max-w-4xl rounded-3xl border border-white/25 bg-white/10 p-8 text-center text-white shadow-2xl shadow-black/30 backdrop-blur-xl"><p className="text-sm text-white/70">{text}</p><Link href="/isorropia" className="mt-6 inline-block text-sm uppercase text-[#adc0fa] hover:text-white">Volver al menú</Link></section></main>;
+  return <main className="flex min-h-screen items-center justify-center px-5 py-10"><section className="w-[90vw] max-w-4xl rounded-3xl border border-white/25 bg-white/10 p-8 text-center text-white shadow-2xl shadow-black/30 backdrop-blur-xl"><p className="text-sm text-white/70">{text}</p><BackButton href="/isorropia">Volver al menú</BackButton></section></main>;
 }

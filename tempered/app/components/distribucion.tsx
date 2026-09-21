@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import BackButton from "./back-button";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import {
   collection,
@@ -179,7 +180,7 @@ export default function Distribucion() {
   return (
     <main className="flex min-h-screen w-full items-center justify-center px-5 py-10">
       <section className="w-[90vw] max-w-7xl rounded-3xl border border-white/25 bg-white/10 p-6 text-white shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-10">
-        <div className="flex items-center justify-between gap-4"><Link href="/isorropia" className="text-xs uppercase text-white/70 hover:text-white">Volver al menú</Link><span className="text-xs uppercase tracking-[0.15em] text-white/50">Gestión mensual</span></div>
+        <div className="flex items-center justify-between gap-4"><BackButton href="/isorropia">Volver al menú</BackButton><span className="text-xs uppercase tracking-[0.15em] text-white/50">Gestión mensual</span></div>
         <h1 className="font-display mt-10 text-center text-2xl uppercase tracking-widest text-[#adc0fa] sm:text-4xl">Distribución</h1>
         {errorMsg && <p className="mx-auto mt-6 max-w-4xl rounded-xl border border-red-500/50 bg-red-500/20 p-3 text-center text-sm text-red-200">{errorMsg}</p>}
         {!currentUserId ? <p className="mx-auto mt-10 max-w-4xl rounded-2xl border border-dashed border-white/25 p-8 text-center text-sm text-white/60">Inicia sesión para cargar tus distribuciones.</p> : <>

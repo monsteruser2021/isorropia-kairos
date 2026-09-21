@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import {
@@ -13,6 +12,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import BackButton from "./back-button";
 
 const categories = [
   "Gastos básicos",
@@ -191,7 +191,7 @@ export default function DistribucionDetalle({ distributionId }: Props) {
       <main className="flex min-h-screen items-center justify-center px-5 py-10">
         <section className="w-[90vw] max-w-4xl rounded-3xl border border-white/25 bg-white/10 p-8 text-center text-white shadow-2xl shadow-black/30 backdrop-blur-xl">
           <p className="text-sm text-white/70">La distribución no existe o no tienes acceso.</p>
-          <Link href="/distribucion" className="mt-6 inline-block text-sm uppercase text-[#adc0fa] hover:text-white">Volver a distribuciones</Link>
+          <BackButton href="/distribucion">Volver a distribuciones</BackButton>
         </section>
       </main>
     );
@@ -200,7 +200,7 @@ export default function DistribucionDetalle({ distributionId }: Props) {
   return (
     <main className="flex min-h-screen items-center justify-center px-5 py-10">
       <section className="w-[90vw] max-w-7xl rounded-3xl border border-white/25 bg-white/10 p-6 text-white shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-10">
-        <Link href="/distribucion" className="text-xs uppercase text-white/70 hover:text-white">Volver a distribuciones</Link>
+        <BackButton href="/distribucion">Volver a distribuciones</BackButton>
         <h1 className="font-display mt-10 text-center text-2xl uppercase tracking-[0.1em] text-[#adc0fa] sm:text-4xl">Ingresos del periodo</h1>
         {errorMsg && <p className="mx-auto mt-6 max-w-4xl rounded-xl border border-red-500/50 bg-red-500/20 p-3 text-center text-sm text-red-200">{errorMsg}</p>}
 

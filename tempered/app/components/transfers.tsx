@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import BackButton from "./back-button";
 import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import {
@@ -126,7 +126,7 @@ export default function Transfers() {
   return (
     <main className="flex min-h-screen w-full items-center justify-center px-4 py-8 sm:px-6 sm:py-10">
       <section className="w-full max-w-6xl rounded-3xl border border-white/25 bg-white/10 p-5 text-white shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-10">
-        <Link href="/isorropia" className="text-xs uppercase text-white/70 hover:text-white">Volver al menú</Link>
+        <BackButton href="/isorropia">Volver al menú</BackButton>
         <h1 className="font-display mt-8 text-center text-2xl uppercase tracking-[0.08em] text-[#adc0fa] sm:text-4xl">Transferencias</h1>
         <div className="mx-auto mt-8 flex max-w-5xl rounded-xl border border-white/20 bg-black/15 p-1" role="group" aria-label="Moneda">
           <button type="button" onClick={() => changeCurrency("bs")} className={`min-h-11 flex-1 rounded-lg text-xs uppercase ${currency === "bs" ? "bg-[#adc0fa] text-[#121212]" : "text-white/70"}`}>Bolívares (Bs)</button>
@@ -147,5 +147,5 @@ export default function Transfers() {
 }
 
 function Message({ text }: { text: string }) {
-  return <main className="flex min-h-screen items-center justify-center px-4 py-8"><section className="w-full max-w-4xl rounded-3xl border border-white/25 bg-white/10 p-8 text-center text-white shadow-2xl shadow-black/30 backdrop-blur-xl"><p className="text-sm text-white/70">{text}</p><Link href="/isorropia" className="mt-6 inline-block text-sm uppercase text-[#adc0fa] hover:text-white">Volver al menú</Link></section></main>;
+  return <main className="flex min-h-screen items-center justify-center px-4 py-8"><section className="w-full max-w-4xl rounded-3xl border border-white/25 bg-white/10 p-8 text-center text-white shadow-2xl shadow-black/30 backdrop-blur-xl"><p className="text-sm text-white/70">{text}</p><BackButton href="/isorropia">Volver al menú</BackButton></section></main>;
 }
