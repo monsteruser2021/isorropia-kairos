@@ -34,27 +34,3 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## Tempered setup (local)
-
-1. Install dependencies:
-
-```bash
-npm install
-```
-
-2. Configure environment variables — copy `.env.example` to `.env.local` and edit values.
-
-3. Generate Prisma client and run seed to create the default admin:
-
-```bash
-npx prisma generate
-npm run db:seed
-```
-
-4. Start dev server:
-
-```bash
-npm run dev
-```
-
