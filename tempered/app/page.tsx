@@ -20,16 +20,14 @@ export default function Home() {
     const passwordInput = formData.get("password") as string;
 
     try {
-      // Como el ID del documento es "cesc.8", lo consultamos directo
       const userRef = doc(db, "users", "cesc.8");
       const userSnap = await getDoc(userRef);
 
       if (userSnap.exists()) {
         const userData = userSnap.data();
 
-        // Validamos si el usuario y la contraseña coinciden
         if (userData.username === usernameInput && userData.password === passwordInput) {
-          // Redirige a /menu (o puedes cambiarlo a donde esté tu componente main)
+          document.cookie = "tempered_session=authenticated; path=/; SameSite=Lax";
           router.push("/menu");
         } else {
           setErrorMsg("Credenciales incorrectas. Verifica tus datos.");
