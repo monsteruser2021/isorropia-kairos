@@ -113,7 +113,7 @@ export default function Transfers() {
       const batch = writeBatch(db);
       const originRef = doc(collection(db, "distributions", distributionId, transactionCollection));
       const destinationRef = doc(collection(db, "distributions", distributionId, transactionCollection));
-      const transferData = { transferId: originRef.id, date, updatedAt: serverTimestamp() };
+      const transferData = { transferId: originRef.id, isTransfer: true, date, updatedAt: serverTimestamp() };
       batch.set(originRef, { category: origin, description: `Transf. a ${destination}`, [incomeField]: 0, [expenseField]: value, ...transferData, createdAt: serverTimestamp() });
       batch.set(destinationRef, { category: destination, description: `Prov. de ${origin}`, [incomeField]: value, [expenseField]: 0, ...transferData, createdAt: serverTimestamp() });
       await batch.commit();
