@@ -1,73 +1,50 @@
-"use client";
-
 import Link from "next/link";
-import { signOut } from "firebase/auth";
-import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase";
 
-function clearSessionCookies() {
-  document.cookie = "tempered_session=; Max-Age=0; path=/";
-  document.cookie = "tempered_user_id=; Max-Age=0; path=/";
-}
+const applications = [
+  {
+    href: "/isorropia",
+    name: "Isorropia Kairos",
+    description: "Administración financiera",
+    className: "border-[#ffa216]/50 bg-[#ffa216]/10 hover:bg-[#ffa216]/20",
+  },
+  {
+    href: "#",
+    name: "Grobit",
+    description: "Hábitos, próximamente",
+    className: "border-white/20 bg-black/20 opacity-80",
+  },
+];
 
 export default function Main() {
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } finally {
-      clearSessionCookies();
-      router.replace("/");
-    }
-  };
-
   return (
     <main className="flex min-h-screen items-center justify-center px-5 py-10">
-      <section className="flex min-h-[70vh] w-[90vw] max-w-7xl items-center justify-center rounded-3xl border border-white/25 bg-white/10 p-8 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-12">
+      <section className="flex min-h-[70vh] w-[90vw] max-w-5xl items-center justify-center rounded-3xl border border-white/25 bg-white/10 p-8 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-12">
         <div className="w-full max-w-4xl">
-          <h1 className="font-display text-center text-3xl uppercase tracking-[0.1em] text-[#ffa216] sm:text-5xl">
-            Isorropia Kairos
+          <p className="text-center text-xs uppercase tracking-[0.16em] text-white/50">Panel de aplicaciones</p>
+          <h1 className="font-display mt-5 text-center text-3xl uppercase tracking-widest text-[#adc0fa] sm:text-5xl">
+            Tempered
           </h1>
+          <p className="mx-auto mt-5 max-w-xl text-center text-sm leading-6 text-white/65">
+            Selecciona una aplicación para continuar.
+          </p>
 
-          <nav className="mt-16 grid gap-5 sm:grid-cols-2 md:grid-cols-3" aria-label="Opciones principales">
-            <Link
-              href="/distribucion"
-              className="rounded-xl border border-white/25 bg-black/20 px-5 py-5 text-center text-sm uppercase text-white transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/70"
-            >
-              Distribución
-            </Link>
-            <Link
-              href="/balance-bs"
-              className="rounded-xl border border-white/25 bg-black/20 px-5 py-5 text-center text-sm uppercase text-white transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/70"
-            >
-              Balance Bs
-            </Link>
-            <Link
-              href="/summary"
-              className="rounded-xl border border-white/25 bg-black/20 px-5 py-5 text-center text-sm uppercase text-white transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/70"
-            >
-              Resumen
-            </Link>
-            <Link
-              href="/balance-dolares"
-              className="rounded-xl border border-white/25 bg-black/20 px-5 py-5 text-center text-sm uppercase text-white transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/70"
-            >
-              Balance $
-            </Link>
-            <Link
-              href="/transfers"
-              className="rounded-xl border border-white/25 bg-black/20 px-5 py-5 text-center text-sm uppercase text-white transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/70"
-            >
-              Transferencias
-            </Link>
-            <button
-              type="button"
-              onClick={() => void handleLogout()}
-              className="rounded-xl border border-red-300/35 bg-red-500/10 px-5 py-5 text-center text-sm uppercase text-red-200 transition hover:bg-red-500/20 focus:outline-none focus:ring-2 focus:ring-red-200/70"
-            >
-              Cerrar sesión
-            </button>
+          <nav className="mt-12 grid gap-5 md:grid-cols-2" aria-label="Aplicaciones de Tempered">
+            {applications.map((application) => {
+              const content = (
+                <>
+                  <span className="block text-xl uppercase tracking-[0.06em] text-white sm:text-2xl">{application.name}</span>
+                  <span className="mt-4 block text-sm text-white/60">{application.description}</span>
+                  <span className="mt-10 block text-xs uppercase text-white/45">{application.href === "#" ? "Acceso próximamente" : "Abrir aplicación"}</span>
+                </>
+              );
+              const className = `min-h-44 rounded-2xl border p-7 text-left transition ${application.className}`;
+
+              return application.href === "#" ? (
+                <div key={application.name} aria-disabled="true" className={className}>{content}</div>
+              ) : (
+                <Link key={application.name} href={application.href} className={`${className} focus:outline-none focus:ring-2 focus:ring-white/70`}>{content}</Link>
+              );
+            })}
           </nav>
         </div>
       </section>
