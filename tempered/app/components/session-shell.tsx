@@ -22,6 +22,11 @@ export default function SessionShell({ children }: { children: React.ReactNode }
   const router = useRouter();
   const [authenticated, setAuthenticated] = useState(false);
   const isLoginPage = pathname === "/";
+  const theme = pathname === "/" || pathname === "/menu"
+    ? "theme-tempered"
+    : pathname.startsWith("/grobit")
+      ? "theme-grobit"
+      : "theme-isorropia";
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -75,7 +80,7 @@ export default function SessionShell({ children }: { children: React.ReactNode }
   };
 
   return (
-    <>
+    <div className={`theme-root ${theme}`}>
       {!isLoginPage && authenticated && (
         <nav className="flex w-full justify-end px-4 pt-4 sm:px-6" aria-label="Sesión">
           <button
@@ -88,6 +93,6 @@ export default function SessionShell({ children }: { children: React.ReactNode }
         </nav>
       )}
       {children}
-    </>
+    </div>
   );
 }

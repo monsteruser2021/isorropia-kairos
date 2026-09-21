@@ -4,6 +4,8 @@
 :root {
   --background: #121212;
   --foreground: #ffffff;
+  --theme-accent: #2e4484;
+  --theme-accent-soft: rgb(46 68 132 / 0.16);
 }
 
 @theme inline {
@@ -20,4 +22,38 @@ body {
   background: transparent;
   color: var(--foreground);
   font-family: "Zen Dots", sans-serif;
+}
+
+.theme-root {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--theme-accent) 0%, #121212 72%);
+  color: var(--foreground);
+  transition: background 300ms ease;
+}
+
+.theme-tempered {
+  --theme-accent: #2e4484;
+  --theme-accent-soft: rgb(46 68 132 / 0.16);
+}
+
+.theme-isorropia {
+  --theme-accent: #ddab36;
+  --theme-accent-soft: rgb(221 171 54 / 0.16);
+}
+
+.theme-grobit {
+  --theme-accent: #066204;
+  --theme-accent-soft: rgb(6 98 4 / 0.16);
+}
+
+.theme-isorropia .text-\[\#adc0fa\] {
+  color: var(--theme-accent);
+}
+
+.theme-isorropia .bg-\[\#adc0fa\] {
+  background-color: var(--theme-accent);
+}
+
+.theme-isorropia .border-\[\#adc0fa\] {
+  border-color: var(--theme-accent);
 }

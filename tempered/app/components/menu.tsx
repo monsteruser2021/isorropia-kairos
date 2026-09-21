@@ -5,13 +5,13 @@ const applications = [
     href: "/isorropia",
     name: "Isorropia Kairos",
     description: "Administración financiera",
-    className: "border-[#ffa216]/50 bg-[#ffa216]/10 hover:bg-[#ffa216]/20",
+    className: "border-[#ddab36]/70 bg-linear-to-br from-[#ddab36]/80 via-[#ddab36]/25 to-[#121212] hover:from-[#ddab36] hover:via-[#ddab36]/35",
   },
   {
-    href: "#",
+    href: "/grobit",
     name: "Grobit",
     description: "Hábitos, próximamente",
-    className: "border-white/20 bg-black/20 opacity-80",
+    className: "border-[#066204]/70 bg-linear-to-br from-[#066204]/80 via-[#066204]/25 to-[#121212] hover:from-[#066204] hover:via-[#066204]/35",
   },
 ];
 
@@ -34,16 +34,12 @@ export default function Main() {
                 <>
                   <span className="block text-xl uppercase tracking-[0.06em] text-white sm:text-2xl">{application.name}</span>
                   <span className="mt-4 block text-sm text-white/60">{application.description}</span>
-                  <span className="mt-10 block text-xs uppercase text-white/45">{application.href === "#" ? "Acceso próximamente" : "Abrir aplicación"}</span>
+                  <span className="mt-10 block text-xs uppercase text-white/45">{application.href === "/grobit" ? "Vista previa" : "Abrir aplicación"}</span>
                 </>
               );
               const className = `min-h-44 rounded-2xl border p-7 text-left transition ${application.className}`;
 
-              return application.href === "#" ? (
-                <div key={application.name} aria-disabled="true" className={className}>{content}</div>
-              ) : (
-                <Link key={application.name} href={application.href} className={`${className} focus:outline-none focus:ring-2 focus:ring-white/70`}>{content}</Link>
-              );
+              return <Link key={application.name} href={application.href} className={`${className} focus:outline-none focus:ring-2 focus:ring-white/70`}>{content}</Link>;
             })}
           </nav>
         </div>

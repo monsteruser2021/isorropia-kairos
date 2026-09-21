@@ -19,7 +19,7 @@ export default function FinancialMenu() {
             </Link>
             <span className="text-xs uppercase tracking-[0.12em] text-white/45">Aplicación financiera</span>
           </div>
-          <h1 className="font-display mt-10 text-center text-3xl uppercase tracking-[0.1em] text-[#ffa216] sm:text-5xl">
+          <h1 className="font-display mt-10 text-center text-3xl uppercase tracking-[0.1em] text-[#ddab36] sm:text-5xl">
             Isorropia Kairos
           </h1>
 
