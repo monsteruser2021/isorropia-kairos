@@ -1,6 +1,27 @@
+"use client";
+
 import Link from "next/link";
+import { signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
+import { auth } from "@/lib/firebase";
+
+function clearSessionCookies() {
+  document.cookie = "tempered_session=; Max-Age=0; path=/";
+  document.cookie = "tempered_user_id=; Max-Age=0; path=/";
+}
 
 export default function Main() {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } finally {
+      clearSessionCookies();
+      router.replace("/");
+    }
+  };
+
   return (
     <main className="flex min-h-screen items-center justify-center px-5 py-10">
       <section className="flex min-h-[70vh] w-[90vw] max-w-7xl items-center justify-center rounded-3xl border border-white/25 bg-white/10 p-8 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-12">
@@ -9,7 +30,7 @@ export default function Main() {
             Isorropia Kairos
           </h1>
 
-          <nav className="mt-16 grid gap-5 sm:grid-cols-2 md:grid-cols-4" aria-label="Opciones principales">
+          <nav className="mt-16 grid gap-5 sm:grid-cols-2 md:grid-cols-3" aria-label="Opciones principales">
             <Link
               href="/distribucion"
               className="rounded-xl border border-white/25 bg-black/20 px-5 py-5 text-center text-sm uppercase text-white transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/70"
@@ -23,6 +44,12 @@ export default function Main() {
               Balance Bs
             </Link>
             <Link
+              href="/summary"
+              className="rounded-xl border border-white/25 bg-black/20 px-5 py-5 text-center text-sm uppercase text-white transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/70"
+            >
+              Resumen
+            </Link>
+            <Link
               href="/balance-dolares"
               className="rounded-xl border border-white/25 bg-black/20 px-5 py-5 text-center text-sm uppercase text-white transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/70"
             >
@@ -34,6 +61,13 @@ export default function Main() {
             >
               Transferencias
             </Link>
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              className="rounded-xl border border-red-300/35 bg-red-500/10 px-5 py-5 text-center text-sm uppercase text-red-200 transition hover:bg-red-500/20 focus:outline-none focus:ring-2 focus:ring-red-200/70"
+            >
+              Cerrar sesión
+            </button>
           </nav>
         </div>
       </section>
