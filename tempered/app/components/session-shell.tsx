@@ -28,7 +28,7 @@ export default function SessionShell({ children }: { children: React.ReactNode }
       ? "theme-mawina"
       : pathname.startsWith("/grobit")
       ? "theme-grobit"
-      : pathname.startsWith("/herramientas")
+      : pathname.startsWith("/herramientas") || pathname.startsWith("/utilidades")
         ? "theme-tools"
         : "theme-isorropia";
 
