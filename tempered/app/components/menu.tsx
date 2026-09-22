@@ -10,7 +10,7 @@ const applications = [
   {
     href: "/grobit",
     name: "Grobit",
-    description: "Hábitos, próximamente",
+    description: "Seguimiento de hábitos",
     className: "border-[#066204]/70 bg-linear-to-br from-[#066204]/80 via-[#066204]/25 to-[#121212] hover:from-[#066204] hover:via-[#066204]/35",
   },
   {
@@ -44,9 +44,9 @@ export default function Main() {
             {applications.map((application) => {
               const content = (
                 <>
-                  <span className="block max-w-full break-words text-md uppercase tracking-[0.04em] text-white sm:text-lg sm:tracking-[0.06em]">{application.name}</span>
-                  <span className="mt-4 block max-w-full break-words text-sm text-white/60">{application.description}</span>
-                  <span className="mt-10 block max-w-full break-words text-xs uppercase text-white/45">{application.href === "/grobit" || application.href === "/mawina" ? "Vista previa" : "Abrir aplicación"}</span>
+                  <span className="block max-w-full wrap-break-word text-md uppercase tracking-[0.04em] text-white sm:text-lg sm:tracking-[0.06em]">{application.name}</span>
+                  <span className="mt-4 block max-w-full wrap-break-word text-sm text-white/60">{application.description}</span>
+                  <span className="mt-10 block max-w-full wrap-break-word text-xs uppercase text-white/45">{application.href === "/mawina" ? "Vista previa" : "Abrir aplicación"}</span>
                 </>
               );
               const className = `flex min-h-44 min-w-0 w-full max-w-full flex-col items-start rounded-2xl border p-5 text-left transition sm:p-6 ${application.className}`;

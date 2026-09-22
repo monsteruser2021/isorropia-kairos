@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { collection, doc, onSnapshot, query, setDoc, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import BackButton from "./back-button";
-import { dayOfWeek, displayDate, formatDate, getMonthDates, getSessionUserId, type Habit } from "./grobit-data";
+import { dayOfWeek, displayDate, formatDate, getMonthDates, readSessionUserId, type Habit } from "./grobit-data";
 
 type Completion = { habitId: string; date: string; completed: boolean };
 
@@ -14,10 +14,11 @@ export default function GrobitDashboard() {
   const [completions, setCompletions] = useState<Completion[]>([]);
   const [error, setError] = useState("");
   const [savingId, setSavingId] = useState("");
+  const [loading, setLoading] = useState(true);
   const today = new Date();
   const todayString = formatDate(today);
   const monthDates = getMonthDates(today);
-  const userId = typeof document === "undefined" ? null : getSessionUserId();
+  const userId = typeof document === "undefined" ? null : readSessionUserId();
 
   useEffect(() => {
     if (!userId) return;
@@ -25,11 +26,12 @@ export default function GrobitDashboard() {
     const habitsQuery = query(collection(db, "habits"), where("userId", "==", userId));
     const completionsQuery = query(collection(db, "habitCompletions"), where("userId", "==", userId));
     const stopHabits = onSnapshot(habitsQuery, (snapshot) => {
-      setHabits(snapshot.docs.map((item) => ({ id: item.id, name: String(item.data().name ?? ""), active: item.data().active !== false, days: Array.isArray(item.data().days) ? item.data().days.map(Number) : [1, 2, 3, 4, 5, 6, 0] })));
-    }, () => setError("No se pudieron cargar los hábitos."));
+      setHabits(snapshot.docs.map((item) => ({ id: item.id, userId: String(item.data().userId ?? ""), name: String(item.data().name ?? ""), active: item.data().active !== false, days: Array.isArray(item.data().days) ? item.data().days.map(Number) : [1, 2, 3, 4, 5, 6, 0] })));
+      setLoading(false);
+    }, () => { setLoading(false); setError("No se pudieron cargar los hábitos."); });
     const stopCompletions = onSnapshot(completionsQuery, (snapshot) => {
       setCompletions(snapshot.docs.map((item) => ({ habitId: String(item.data().habitId ?? ""), date: String(item.data().date ?? ""), completed: item.data().completed === true })));
-    }, () => setError("No se pudo cargar el historial diario."));
+    }, () => { setLoading(false); setError("No se pudo cargar el historial diario."); });
 
     return () => {
       stopHabits();
@@ -73,7 +75,9 @@ export default function GrobitDashboard() {
         <p className="mt-5 text-sm leading-6 text-white/70">Construye constancia, un día a la vez.</p>
       </header>
 
-      {(error || !userId) && <p className="mt-6 rounded-xl border border-amber-200/40 bg-black/30 p-4 text-sm text-amber-100">{error || "No se encontró la sesión activa."}</p>}
+      {error && <p className="mt-6 rounded-xl border border-amber-200/40 bg-black/30 p-4 text-sm text-amber-100">{error}</p>}
+
+      {loading && <p className="mt-6 text-sm text-white/60">Cargando tus hábitos...</p>}
 
       <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.7fr)]">
         <section className="min-w-0 rounded-2xl border border-white/20 bg-black/25 p-5 sm:p-7" aria-labelledby="monthly-title">
