@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { collection, doc, onSnapshot, query, setDoc, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import BackButton from "./back-button";
 import { dayOfWeek, displayDate, formatDate, getMonthDates, readSessionUserId, type Habit } from "./grobit-data";
 
 type Completion = { habitId: string; date: string; completed: boolean };
@@ -65,7 +64,6 @@ export default function GrobitDashboard() {
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <BackButton href="/menu">Volver a Tempered</BackButton>
         <Link href="/grobit/administracion" className="inline-flex min-h-11 max-w-full items-center justify-center rounded-xl border border-[#76c978]/70 bg-[#066204]/70 px-4 py-3 text-center text-xs font-bold uppercase text-white transition hover:bg-[#087b06] focus:outline-none focus:ring-2 focus:ring-white">Administrar hábitos</Link>
       </div>
 

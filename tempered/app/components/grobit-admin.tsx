@@ -18,6 +18,7 @@ export default function GrobitAdmin() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [actionId, setActionId] = useState("");
+  const [removingId, setRemovingId] = useState("");
 
   const userId = typeof document === "undefined" ? null : readSessionUserId();
 
@@ -98,6 +99,7 @@ export default function GrobitAdmin() {
     if (habit.userId !== userId || actionId || !window.confirm(`¿Eliminar ${habit.name}?`)) return;
     setError("");
     setActionId(habit.id);
+    setRemovingId(habit.id);
     try {
       await deleteDoc(doc(db, "habits", habit.id));
       if (editingId === habit.id) resetForm();
@@ -106,6 +108,7 @@ export default function GrobitAdmin() {
       setError("No se pudo eliminar el hábito.");
     } finally {
       setActionId("");
+      setRemovingId("");
     }
   };
 
@@ -140,7 +143,7 @@ export default function GrobitAdmin() {
 
       <section className="mt-8 space-y-3" aria-labelledby="habits-list-title">
         <h2 id="habits-list-title" className="text-lg uppercase text-white">Hábitos configurados</h2>
-        {habits.length === 0 && !loading ? <p className="rounded-xl border border-dashed border-white/20 p-5 text-sm text-white/55">Todavía no hay hábitos configurados.</p> : habits.map((habit) => <article key={habit.id} className="flex min-w-0 flex-col gap-4 rounded-xl border border-white/15 bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><h3 className={`wrap-break-word text-sm uppercase ${habit.active ? "text-white" : "text-white/45 line-through"}`}>{habit.name}</h3><p className="mt-2 text-xs text-white/50">{habit.days.map((day) => weekDays.find((item) => item.value === day)?.label).join(" · ")}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => edit(habit)} disabled={Boolean(actionId) || saving} className="min-h-10 rounded-lg border border-white/25 px-3 py-2 text-xs uppercase text-white hover:bg-white/10 disabled:opacity-50">Editar</button><button type="button" onClick={() => void toggleActive(habit)} disabled={Boolean(actionId) || saving} className="min-h-10 rounded-lg border border-[#76c978]/50 px-3 py-2 text-xs uppercase text-[#b8f0b9] disabled:opacity-50">{actionId === habit.id ? "Procesando..." : habit.active ? "Pausar" : "Activar"}</button><button type="button" onClick={() => void remove(habit)} disabled={Boolean(actionId) || saving} className="min-h-10 rounded-lg border border-red-300/30 px-3 py-2 text-xs uppercase text-red-200 disabled:opacity-50">Eliminar</button></div></article>)}
+        {habits.length === 0 && !loading ? <p className="rounded-xl border border-dashed border-white/20 p-5 text-sm text-white/55">Todavía no hay hábitos configurados.</p> : habits.map((habit, index) => <article key={habit.id} style={{ animationDelay: `${Math.min(index * 25, 150)}ms` }} className={`item-enter flex min-w-0 flex-col gap-4 rounded-xl border border-white/15 bg-black/20 p-4 transition-[opacity,transform] duration-200 sm:flex-row sm:items-center sm:justify-between ${removingId === habit.id ? "item-exit" : ""}`}><div className="min-w-0"><h3 className={`wrap-break-word text-sm uppercase ${habit.active ? "text-white" : "text-white/45 line-through"}`}>{habit.name}</h3><p className="mt-2 text-xs text-white/50">{habit.days.map((day) => weekDays.find((item) => item.value === day)?.label).join(" · ")}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => edit(habit)} disabled={Boolean(actionId) || saving} className="min-h-10 transform-gpu rounded-lg border border-white/25 px-3 py-2 text-xs uppercase text-white transition-transform duration-150 active:scale-95 hover:bg-white/10 disabled:opacity-50">Editar</button><button type="button" onClick={() => void toggleActive(habit)} disabled={Boolean(actionId) || saving} className="min-h-10 transform-gpu rounded-lg border border-[#76c978]/50 px-3 py-2 text-xs uppercase text-[#b8f0b9] transition-transform duration-150 active:scale-95 disabled:opacity-50">{actionId === habit.id ? "Procesando..." : habit.active ? "Pausar" : "Activar"}</button><button type="button" onClick={() => void remove(habit)} disabled={Boolean(actionId) || saving} className="min-h-10 transform-gpu rounded-lg border border-red-300/30 px-3 py-2 text-xs uppercase text-red-200 transition-transform duration-150 active:scale-95 disabled:opacity-50">Eliminar</button></div></article>)}
       </section>
     </main>
   );

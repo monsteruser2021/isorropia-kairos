@@ -1,5 +1,4 @@
 import Link from "next/link";
-import BackButton from "./back-button";
 
 const financialApps = [
   { href: "/summary", label: "Resumen" },
@@ -14,11 +13,10 @@ export default function FinancialMenu() {
     <main className="flex min-h-screen items-center justify-center px-5 py-10">
       <section className="flex min-h-[70vh] w-[calc(100%-2rem)] max-w-7xl items-center justify-center rounded-3xl border border-white/25 bg-white/10 p-5 shadow-2xl shadow-black/30 backdrop-blur-xl sm:w-[90vw] sm:p-12">
         <div className="w-full max-w-4xl min-w-0">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <BackButton href="/menu">Volver a Tempered</BackButton>
+          <div className="flex justify-end">
             <span className="text-xs uppercase tracking-[0.12em] text-white/45">Aplicación financiera</span>
           </div>
-          <h1 className="font-display mt-10 max-w-full break-words text-center text-2xl uppercase tracking-[0.06em] text-[#ddab36] sm:text-5xl sm:tracking-widest">
+          <h1 className="font-display mt-10 max-w-full wrap-break-word text-center text-2xl uppercase tracking-[0.06em] text-[#ddab36] sm:text-5xl sm:tracking-widest">
             Isorropia Kairos
           </h1>
 
@@ -27,7 +25,7 @@ export default function FinancialMenu() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="min-w-0 w-full max-w-full break-words rounded-xl border border-white/25 bg-black/20 px-4 py-5 text-center text-xs uppercase text-white transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/70 sm:px-5 sm:text-sm"
+                className="min-w-0 w-full max-w-full wrap-break-word rounded-xl border border-white/25 bg-black/20 px-4 py-5 text-center text-xs uppercase text-white transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/70 sm:px-5 sm:text-sm"
               >
                 {item.label}
               </Link>

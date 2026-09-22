@@ -24,8 +24,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
-      <body className="min-h-screen bg-transparent">
-        <div className="min-h-screen w-full overflow-y-auto">
+      <body className="min-h-screen bg-[#121212]">
+        <div className="min-h-screen w-full overflow-y-auto bg-[#121212]">
           <SessionShell>{children}</SessionShell>
         </div>
       </body>

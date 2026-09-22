@@ -8,6 +8,11 @@
   --theme-accent-soft: rgb(46 68 132 / 0.16);
 }
 
+html,
+body {
+  background: #121212;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -24,11 +29,101 @@ body {
   font-family: "Zen Dots", sans-serif;
 }
 
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes item-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 4px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes slide-forward {
+  from {
+    opacity: 0;
+    transform: translate3d(24px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes slide-back {
+  from {
+    opacity: 0;
+    transform: translate3d(-24px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.page-enter {
+  animation: page-enter 200ms ease-out both;
+  will-change: opacity, transform;
+}
+
+.item-enter {
+  animation: item-enter 180ms ease-out both;
+  will-change: opacity, transform;
+}
+
+.item-exit {
+  opacity: 0;
+  transform: translate3d(0, 4px, 0) scale(0.99);
+  transition: opacity 180ms ease-out, transform 180ms ease-out;
+  pointer-events: none;
+}
+
+.slide-panel-forward,
+.slide-panel-back {
+  animation-duration: 250ms;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+  will-change: opacity, transform;
+}
+
+.slide-panel-forward {
+  animation-name: slide-forward;
+}
+
+.slide-panel-back {
+  animation-name: slide-back;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .item-enter,
+  .slide-panel-forward,
+  .slide-panel-back {
+    animation: none;
+  }
+
+  .item-exit {
+    transition: none;
+  }
+}
+
 .theme-root {
   min-height: 100vh;
   background: linear-gradient(135deg, var(--theme-accent) 0%, #121212 72%);
   color: var(--foreground);
-  transition: background 300ms ease;
+  transition: background 200ms ease;
 }
 
 .theme-tempered {

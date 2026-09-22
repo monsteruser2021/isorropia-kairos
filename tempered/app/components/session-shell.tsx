@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { signOut, onAuthStateChanged } from "firebase/auth";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
 
@@ -22,6 +23,7 @@ export default function SessionShell({ children }: { children: React.ReactNode }
   const router = useRouter();
   const [authenticated, setAuthenticated] = useState(false);
   const isLoginPage = pathname === "/";
+  const isMainMenu = pathname === "/menu";
   const theme = pathname === "/" || pathname === "/menu"
     ? "theme-tempered"
     : pathname.startsWith("/mawina")
@@ -84,13 +86,19 @@ export default function SessionShell({ children }: { children: React.ReactNode }
   };
 
   return (
-    <div className={`theme-root ${theme}`}>
-      {!isLoginPage && authenticated && (
-        <nav className="flex w-full justify-end px-4 pt-4 sm:px-6" aria-label="Sesión">
+    <div key={pathname} className={`theme-root page-enter ${theme}`}>
+      {!isLoginPage && !isMainMenu && authenticated && (
+        <nav className="flex w-full items-center justify-between gap-3 px-4 pt-4 sm:px-6" aria-label="Navegación de sesión">
+          <Link
+            href="/menu"
+            className="min-h-11 transform-gpu rounded-xl border border-white/45 bg-black/35 px-4 py-2 text-xs uppercase text-white shadow-lg shadow-black/20 transition-[transform,background-color,border-color] duration-150 ease-out hover:border-white hover:bg-white/15 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white"
+          >
+            <span aria-hidden="true">←</span> Volver al menú principal
+          </Link>
           <button
             type="button"
             onClick={() => void handleLogout()}
-            className="min-h-11 rounded-xl border border-white/45 bg-black/35 px-4 py-2 text-xs uppercase text-white shadow-lg shadow-black/20 transition hover:border-white hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white"
+            className="min-h-11 transform-gpu rounded-xl border border-white/45 bg-black/35 px-4 py-2 text-xs uppercase text-white shadow-lg shadow-black/20 transition-[transform,background-color,border-color] duration-150 ease-out hover:border-white hover:bg-white/15 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white"
           >
             <span aria-hidden="true">↪</span> Cerrar sesión
           </button>

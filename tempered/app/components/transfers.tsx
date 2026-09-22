@@ -34,6 +34,7 @@ export default function Transfers() {
   const [user, setUser] = useState<User | null>(null);
   const [fallbackUserId, setFallbackUserId] = useState<string | null>(null);
   const [currency, setCurrency] = useState<Currency>("bs");
+  const [currencyDirection, setCurrencyDirection] = useState<"forward" | "back">("forward");
   const [distributions, setDistributions] = useState<Distribution[]>([]);
   const [distributionId, setDistributionId] = useState("");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -94,6 +95,8 @@ export default function Transfers() {
   const destinationOptions = categories.filter((category) => category !== origin);
 
   const changeCurrency = (next: Currency) => {
+    if (next === currency) return;
+    setCurrencyDirection(next === "usd" ? "forward" : "back");
     setCurrency(next); setOrigin(""); setDestination(""); setAmount(""); setErrorMsg("");
   };
 
@@ -129,18 +132,18 @@ export default function Transfers() {
         <BackButton href="/isorropia">Volver al menú</BackButton>
         <h1 className="font-display mt-8 text-center text-2xl uppercase tracking-[0.08em] text-[#adc0fa] sm:text-4xl">Transferencias</h1>
         <div className="mx-auto mt-8 flex max-w-5xl rounded-xl border border-white/20 bg-black/15 p-1" role="group" aria-label="Moneda">
-          <button type="button" onClick={() => changeCurrency("bs")} className={`min-h-11 flex-1 rounded-lg text-xs uppercase ${currency === "bs" ? "bg-[#adc0fa] text-[#121212]" : "text-white/70"}`}>Bolívares (Bs)</button>
-          <button type="button" onClick={() => changeCurrency("usd")} className={`min-h-11 flex-1 rounded-lg text-xs uppercase ${currency === "usd" ? "bg-[#adc0fa] text-[#121212]" : "text-white/70"}`}>Dólares ($)</button>
+          <button type="button" onClick={() => changeCurrency("bs")} className={`min-h-11 transform-gpu flex-1 rounded-lg text-xs uppercase transition-[transform,background-color] duration-200 active:scale-95 ${currency === "bs" ? "bg-[#adc0fa] text-[#121212]" : "text-white/70 hover:bg-white/10"}`}>Bolívares (Bs)</button>
+          <button type="button" onClick={() => changeCurrency("usd")} className={`min-h-11 transform-gpu flex-1 rounded-lg text-xs uppercase transition-[transform,background-color] duration-200 active:scale-95 ${currency === "usd" ? "bg-[#adc0fa] text-[#121212]" : "text-white/70 hover:bg-white/10"}`}>Dólares ($)</button>
         </div>
         {errorMsg && <p className="mx-auto mt-5 max-w-5xl rounded-xl border border-red-500/50 bg-red-500/20 p-3 text-center text-xs text-red-200">{errorMsg}</p>}
         <div className="mx-auto mt-6 max-w-5xl"><label className="text-xs uppercase text-white/70">Periodo<select value={distributionId} onChange={(event) => setDistributionId(event.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-4 py-3 text-sm text-white">{distributions.length === 0 ? <option value="">No hay periodos</option> : distributions.map((item) => <option key={item.id} value={item.id}>{monthNames[item.month]} {item.year}</option>)}</select></label></div>
-        {!selectedDistribution ? <p className="mx-auto mt-8 max-w-5xl rounded-2xl border border-dashed border-white/25 p-8 text-center text-sm text-white/60">Crea primero una distribución mensual.</p> : <>
+        {!selectedDistribution ? <p className="mx-auto mt-8 max-w-5xl rounded-2xl border border-dashed border-white/25 p-8 text-center text-sm text-white/60">Crea primero una distribución mensual.</p> : <div key={`${currency}-${distributionId}`} className={currencyDirection === "forward" ? "slide-panel-forward" : "slide-panel-back"}>
           <div className="mt-8 grid gap-4 lg:grid-cols-[1fr_1.2fr]">
             <div className="rounded-2xl border border-white/15 bg-black/15 p-4"><h2 className="text-sm uppercase text-white/80">Saldos disponibles</h2><div className="mt-4 space-y-2">{balances.map((item) => <div key={item.category} className="flex justify-between gap-3 text-sm"><span>{item.category}</span><span className={item.balance > 0 ? "text-emerald-300" : "text-white/50"}>{symbol} {item.balance.toFixed(2)}</span></div>)}</div></div>
             <form onSubmit={executeTransfer} className="rounded-2xl border border-white/15 bg-black/15 p-4"><h2 className="text-sm uppercase text-white/80">Nueva transferencia</h2><div className="mt-4 grid gap-4"><label className="text-xs uppercase text-white/70">Origen<select required value={origin} onChange={(event) => { setOrigin(event.target.value); setDestination(""); }} className="mt-2 min-h-12 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-4 py-3 text-sm text-white"><option value="">Selecciona una categoría</option>{availableOrigins.map((item) => <option key={item.category} value={item.category}>{item.category} ({symbol} {item.balance.toFixed(2)})</option>)}</select></label><label className="text-xs uppercase text-white/70">Destino<select required value={destination} onChange={(event) => setDestination(event.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-4 py-3 text-sm text-white"><option value="">Selecciona una categoría</option>{destinationOptions.map((category) => <option key={category} value={category}>{category}</option>)}</select></label><div className="grid gap-4 sm:grid-cols-2"><label className="text-xs uppercase text-white/70">Monto ({symbol})<input required type="number" min="0.01" max={originBalance} step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-4 py-3 text-base text-white" /></label><label className="text-xs uppercase text-white/70">Fecha<input required type="date" min={minDate} max={maxDate} value={date} onChange={(event) => setDate(event.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-4 py-3 text-base text-white" /></label></div><button disabled={saving || availableOrigins.length === 0} type="submit" className="min-h-12 rounded-xl bg-[#adc0fa] px-4 py-3 text-xs uppercase text-[#121212] hover:bg-white disabled:cursor-not-allowed disabled:opacity-50">{saving ? "Registrando..." : "Transferir"}</button></div></form>
           </div>
           <p className="mx-auto mt-5 max-w-5xl text-xs text-white/50">Las transferencias se registran como egreso en el origen e ingreso en el destino dentro de la moneda seleccionada.</p>
-        </>}
+        </div>}
       </section>
     </main>
   );

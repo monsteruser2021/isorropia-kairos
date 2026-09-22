@@ -49,7 +49,7 @@ export default function Main() {
                   <span className="mt-10 block max-w-full wrap-break-word text-xs uppercase text-white/45">{application.href === "/mawina" ? "Vista previa" : "Abrir aplicación"}</span>
                 </>
               );
-              const className = `flex min-h-44 min-w-0 w-full max-w-full flex-col items-start rounded-2xl border p-5 text-left transition sm:p-6 ${application.className}`;
+              const className = `flex min-h-44 min-w-0 w-full max-w-full transform-gpu flex-col items-start rounded-2xl border p-5 text-left transition-[transform,background-color,border-color] duration-200 ease-out hover:-translate-y-0.5 active:scale-95 sm:p-6 ${application.className}`;
 
               return <Link key={application.name} href={application.href} className={`${className} focus:outline-none focus:ring-2 focus:ring-white/70`}>{content}</Link>;
             })}

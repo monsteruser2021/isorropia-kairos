@@ -27,6 +27,7 @@ export default function Summary() {
   const [user, setUser] = useState<User | null>(null);
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [currency, setCurrency] = useState<Currency>("bs");
+  const [currencyDirection, setCurrencyDirection] = useState<"forward" | "back">("forward");
   const [distributions, setDistributions] = useState<Distribution[]>([]);
   const [distributionId, setDistributionId] = useState("");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -108,6 +109,11 @@ export default function Summary() {
   }), [categories, currency, distributionId, incomes, incomesKey, transactions, transactionsKey]);
 
   const selectedDistribution = distributions.find((item) => item.id === distributionId);
+  const changeCurrency = (next: Currency) => {
+    if (next === currency) return;
+    setCurrencyDirection(next === "usd" ? "forward" : "back");
+    setCurrency(next);
+  };
 
   if (!currentUserId) return <Message text="Inicia sesión para acceder al resumen." />;
 
@@ -117,14 +123,14 @@ export default function Summary() {
         <BackButton href="/isorropia">Volver al menú</BackButton>
         <h1 className="font-display mt-8 text-center text-2xl uppercase tracking-[0.08em] text-[#adc0fa] sm:text-4xl">Resumen</h1>
         <div className="mx-auto mt-8 flex max-w-xl rounded-xl border border-white/20 bg-black/15 p-1" role="group" aria-label="Moneda">
-          <button type="button" onClick={() => setCurrency("bs")} aria-pressed={currency === "bs"} className={`min-h-11 flex-1 rounded-lg text-xs uppercase transition ${currency === "bs" ? "bg-[#adc0fa] text-[#121212]" : "text-white/70 hover:bg-white/10"}`}>Bolívares (Bs)</button>
-          <button type="button" onClick={() => setCurrency("usd")} aria-pressed={currency === "usd"} className={`min-h-11 flex-1 rounded-lg text-xs uppercase transition ${currency === "usd" ? "bg-[#adc0fa] text-[#121212]" : "text-white/70 hover:bg-white/10"}`}>Dólares ($)</button>
+          <button type="button" onClick={() => changeCurrency("bs")} aria-pressed={currency === "bs"} className={`min-h-11 transform-gpu flex-1 rounded-lg text-xs uppercase transition-[transform,background-color] duration-200 active:scale-95 ${currency === "bs" ? "bg-[#adc0fa] text-[#121212]" : "text-white/70 hover:bg-white/10"}`}>Bolívares (Bs)</button>
+          <button type="button" onClick={() => changeCurrency("usd")} aria-pressed={currency === "usd"} className={`min-h-11 transform-gpu flex-1 rounded-lg text-xs uppercase transition-[transform,background-color] duration-200 active:scale-95 ${currency === "usd" ? "bg-[#adc0fa] text-[#121212]" : "text-white/70 hover:bg-white/10"}`}>Dólares ($)</button>
         </div>
         {errorMsg && <p className="mx-auto mt-5 max-w-xl rounded-xl border border-red-500/50 bg-red-500/20 p-3 text-center text-xs text-red-200">{errorMsg}</p>}
         {!selectedDistribution ? (
           <p className="mx-auto mt-8 max-w-xl rounded-2xl border border-dashed border-white/25 p-8 text-center text-sm text-white/60">No hay una distribución mensual disponible.</p>
         ) : (
-          <section className="mx-auto mt-8 max-w-xl rounded-2xl border border-white/15 bg-black/15 p-5 sm:p-7">
+          <section key={`${currency}-${distributionId}`} className={`mx-auto mt-8 max-w-xl rounded-2xl border border-white/15 bg-black/15 p-5 sm:p-7 ${currencyDirection === "forward" ? "slide-panel-forward" : "slide-panel-back"}`}>
             <div className="flex flex-col gap-2 border-b border-white/15 pb-4 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-sm uppercase tracking-[0.08em] text-white/90">Saldos disponibles</h2>
               <p className="text-xs text-white/50">{monthNames[selectedDistribution.month]} {selectedDistribution.year}</p>
