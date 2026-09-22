@@ -1,5 +1,5 @@
-import GrobitPreview from "../components/grobit-preview";
+import GrobitDashboard from "../components/grobit-dashboard";
 
 export default function GrobitPage() {
-  return <GrobitPreview />;
+  return <GrobitDashboard />;
 }

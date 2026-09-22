@@ -51,6 +51,11 @@ body {
   --theme-accent-soft: rgb(98 4 4 / 0.16);
 }
 
+.theme-tools {
+  --theme-accent: #000000;
+  --theme-accent-soft: rgb(255 255 255 / 0.12);
+}
+
 .theme-isorropia .text-\[\#adc0fa\] {
   color: var(--theme-accent);
 }

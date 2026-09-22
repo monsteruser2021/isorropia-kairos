@@ -28,7 +28,9 @@ export default function SessionShell({ children }: { children: React.ReactNode }
       ? "theme-mawina"
       : pathname.startsWith("/grobit")
       ? "theme-grobit"
-      : "theme-isorropia";
+      : pathname.startsWith("/herramientas")
+        ? "theme-tools"
+        : "theme-isorropia";
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
