@@ -14,6 +14,12 @@ const applications = [
     className: "border-[#066204]/70 bg-linear-to-br from-[#066204]/80 via-[#066204]/25 to-[#121212] hover:from-[#066204] hover:via-[#066204]/35",
   },
   {
+    href: "/mythical-growth",
+    name: "Mythical Growth",
+    description: "Inversiones, reventas y crecimiento",
+    className: "border-[#4a0e4e]/80 bg-linear-to-br from-[#4a0e4e] via-[#3b0764]/45 to-[#121212] hover:from-[#5e1764] hover:via-[#3b0764]/60",
+  },
+  {
     href: "/mawina",
     name: "Mawina Kairos",
     description: "Rutinas, próximamente",

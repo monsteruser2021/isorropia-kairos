@@ -27,6 +27,8 @@ function SessionChrome({ children }: { children: React.ReactNode }) {
       ? "theme-mawina"
       : pathname.startsWith("/grobit")
       ? "theme-grobit"
+      : pathname.startsWith("/mythical-growth")
+      ? "theme-mythical"
       : pathname.startsWith("/herramientas") || pathname.startsWith("/utilidades")
         ? "theme-tools"
         : "theme-isorropia";

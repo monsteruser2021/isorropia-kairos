@@ -146,6 +146,11 @@ body {
   --theme-accent-soft: rgb(98 4 4 / 0.16);
 }
 
+.theme-mythical {
+  --theme-accent: #4a0e4e;
+  --theme-accent-soft: rgb(74 14 78 / 0.2);
+}
+
 .theme-tools {
   --theme-accent: #000000;
   --theme-accent-soft: rgb(255 255 255 / 0.12);
