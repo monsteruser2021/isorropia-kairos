@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { notifySessionChanged } from "./components/session-context";
 
 export default function Home() {
   const router = useRouter();
@@ -29,6 +30,8 @@ export default function Home() {
         if (userData.username === usernameInput && userData.password === passwordInput) {
           document.cookie = "tempered_session=authenticated; path=/; SameSite=Lax";
           document.cookie = "tempered_user_id=cesc.8; path=/; SameSite=Lax";
+          window.localStorage.setItem("tempered_user_id", "cesc.8");
+          notifySessionChanged();
           router.push("/menu");
         } else {
           setErrorMsg("Credenciales incorrectas. Verifica tus datos.");

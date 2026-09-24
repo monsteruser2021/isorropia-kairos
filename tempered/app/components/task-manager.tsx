@@ -7,6 +7,7 @@ import { db } from "@/lib/firebase";
 import BackButton from "./back-button";
 import { localDateString, type Task } from "./task-data";
 import { readSessionUserId } from "./grobit-data";
+import { useSession } from "./session-context";
 
 export default function TaskManager() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -19,7 +20,8 @@ export default function TaskManager() {
   const [actionId, setActionId] = useState("");
   const [removingId, setRemovingId] = useState("");
   const [error, setError] = useState("");
-  const userId = typeof document === "undefined" ? null : readSessionUserId();
+  const { userId: sessionUserId } = useSession();
+  const userId = sessionUserId ?? (typeof document === "undefined" ? null : readSessionUserId());
   const today = localDateString();
 
   useEffect(() => {
@@ -35,6 +37,7 @@ export default function TaskManager() {
           description: String(item.data().description ?? ""),
           dueDate: String(item.data().dueDate ?? ""),
           completed: item.data().completed === true,
+          completedAt: item.data().completedAt?.toDate?.().toISOString() ?? undefined,
         })));
         setLoading(false);
       },
@@ -46,7 +49,8 @@ export default function TaskManager() {
     );
   }, [userId]);
 
-  const sortedTasks = useMemo(() => [...tasks].sort((a, b) => a.dueDate.localeCompare(b.dueDate) || a.title.localeCompare(b.title)), [tasks]);
+  const pendingTasks = useMemo(() => tasks.filter((task) => !task.completed).sort((a, b) => a.dueDate.localeCompare(b.dueDate) || a.title.localeCompare(b.title)), [tasks]);
+  const completedTasks = useMemo(() => tasks.filter((task) => task.completed).sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? "")), [tasks]);
 
   const resetForm = () => {
     setTitle("");
@@ -78,9 +82,12 @@ export default function TaskManager() {
     if (task.userId !== userId || actionId) return;
     setActionId(task.id);
     try {
-      await updateDoc(doc(db, "tasks", task.id), { completed: !task.completed });
+      const completed = !task.completed;
+      setTasks((current) => current.map((item) => item.id === task.id ? { ...item, completed, completedAt: completed ? new Date().toISOString() : undefined } : item));
+      await updateDoc(doc(db, "tasks", task.id), { completed, completedAt: completed ? serverTimestamp() : null });
     } catch (actionError) {
       console.error("Error al actualizar tarea:", actionError);
+      setTasks((current) => current.map((item) => item.id === task.id ? task : item));
       setError("No se pudo actualizar el estado de la tarea.");
     } finally {
       setActionId("");
@@ -139,8 +146,14 @@ export default function TaskManager() {
       <section className="mt-10" aria-labelledby="task-list-title">
         <div className="flex items-end justify-between gap-4"><h2 id="task-list-title" className="text-xl uppercase text-white">Mis tareas</h2><span className="text-xs text-white/50">{tasks.filter((task) => !task.completed).length} pendientes</span></div>
         {loading && userId && <p className="mt-5 text-sm text-white/60">Cargando tareas...</p>}
-        {!loading && sortedTasks.length === 0 && <p className="mt-5 border border-dashed border-white/25 p-5 text-sm text-white/55">Todavía no tienes tareas.</p>}
-        <div className="mt-5 space-y-3">{sortedTasks.map((task, index) => { const overdue = !task.completed && task.dueDate < today; return <article key={task.id} style={{ animationDelay: `${Math.min(index * 25, 150)}ms` }} className={`item-enter border p-4 transition-[opacity,transform,background-color,border-color] duration-200 sm:p-5 ${removingId === task.id ? "item-exit" : ""} ${overdue ? "border-red-400/80 bg-red-950/60" : task.completed ? "border-white/15 bg-white/5" : "border-white/25 bg-black/50"}`}><div className="flex min-w-0 items-start gap-3"><input type="checkbox" checked={task.completed} disabled={actionId === task.id} onChange={() => void toggleCompleted(task)} aria-label={`Marcar ${task.title} como completada`} className="mt-1 size-5 shrink-0 accent-white" /><div className="min-w-0 flex-1"><h3 className={`wrap-break-word text-sm uppercase ${task.completed ? "text-white/45 line-through" : overdue ? "text-red-100" : "text-white"}`}>{task.title}</h3>{task.description && <p className="mt-2 wrap-break-word text-sm leading-6 text-white/60">{task.description}</p>}<p className={`mt-3 text-xs uppercase ${overdue ? "font-bold text-red-200" : "text-white/50"}`}>{overdue ? "Atrasada · " : "Fecha límite · "}{task.dueDate}</p></div></div><div className="mt-4 flex flex-wrap justify-end gap-2"><button type="button" onClick={() => edit(task)} disabled={Boolean(actionId) || saving} className="min-h-10 transform-gpu rounded-lg border border-white/25 px-3 py-2 text-xs uppercase text-white transition-transform duration-150 active:scale-95 hover:bg-white/10 disabled:opacity-50">Editar</button><button type="button" onClick={() => void remove(task)} disabled={Boolean(actionId) || saving} className="min-h-10 transform-gpu rounded-lg border border-red-300/40 px-3 py-2 text-xs uppercase text-red-100 transition-transform duration-150 active:scale-95 hover:bg-red-900/50 disabled:opacity-50">{actionId === task.id ? "Procesando..." : "Eliminar"}</button></div></article>; })}</div>
+        {!loading && pendingTasks.length === 0 && <p className="mt-5 border border-dashed border-white/25 p-5 text-sm text-white/55">No hay tareas pendientes.</p>}
+        <div className="mt-5 space-y-3">{pendingTasks.map((task, index) => { const overdue = task.dueDate < today; return <article key={task.id} style={{ animationDelay: `${Math.min(index * 25, 150)}ms` }} className={`item-enter border p-4 sm:p-5 ${removingId === task.id ? "item-exit" : ""} ${overdue ? "border-red-400/80 bg-red-950/60" : "border-white/25 bg-black/50"}`}><div className="flex min-w-0 items-start gap-3"><input type="checkbox" checked={false} disabled={actionId === task.id} onChange={() => void toggleCompleted(task)} aria-label={`Marcar ${task.title} como completada`} className="mt-1 size-5 shrink-0 accent-white" /><div className="min-w-0 flex-1"><h3 className={`wrap-break-word text-sm uppercase ${overdue ? "text-red-100" : "text-white"}`}>{task.title}</h3>{task.description && <p className="mt-2 wrap-break-word text-sm leading-6 text-white/60">{task.description}</p>}<p className={`mt-3 text-xs uppercase ${overdue ? "font-bold text-red-200" : "text-white/50"}`}>{overdue ? "Atrasada · " : "Fecha límite · "}{task.dueDate}</p></div></div><div className="mt-4 flex flex-wrap justify-end gap-2"><button type="button" onClick={() => edit(task)} disabled={Boolean(actionId) || saving} className="min-h-10 rounded-lg border border-white/25 px-3 py-2 text-xs uppercase text-white hover:bg-white/10 disabled:opacity-50">Editar</button><button type="button" onClick={() => void remove(task)} disabled={Boolean(actionId) || saving} className="min-h-10 rounded-lg border border-red-300/40 px-3 py-2 text-xs uppercase text-red-100 hover:bg-red-900/50 disabled:opacity-50">{actionId === task.id ? "Procesando..." : "Eliminar"}</button></div></article>; })}</div>
+      </section>
+
+      <section className="mt-10" aria-labelledby="completed-task-title">
+        <div className="flex flex-wrap items-end justify-between gap-3"><h2 id="completed-task-title" className="max-w-full wrap-break-word text-xl uppercase text-white">Historial de tareas completadas</h2><span className="text-xs text-white/50">{completedTasks.length} completadas</span></div>
+        {completedTasks.length === 0 && <p className="mt-5 border border-dashed border-white/25 p-5 text-sm text-white/55">Aún no hay tareas completadas.</p>}
+        <div className="mt-5 space-y-3">{completedTasks.map((task) => <article key={task.id} className="border border-white/15 bg-white/5 p-4 sm:p-5"><div className="flex min-w-0 items-start gap-3"><input type="checkbox" checked disabled={actionId === task.id} onChange={() => void toggleCompleted(task)} aria-label={`Reabrir ${task.title}`} className="mt-1 size-5 shrink-0 accent-white" /><div className="min-w-0 flex-1"><h3 className="wrap-break-word text-sm uppercase text-white/55 line-through">{task.title}</h3>{task.description && <p className="mt-2 wrap-break-word text-sm leading-6 text-white/50">{task.description}</p>}<p className="mt-3 wrap-break-word text-xs uppercase text-white/45">Completada · {task.completedAt ? new Date(task.completedAt).toLocaleString("es-VE") : "fecha no disponible"}</p></div></div><div className="mt-4 flex flex-wrap justify-end gap-2"><button type="button" onClick={() => void toggleCompleted(task)} disabled={Boolean(actionId) || saving} className="min-h-10 rounded-lg border border-white/25 px-3 py-2 text-xs uppercase text-white hover:bg-white/10 disabled:opacity-50">Reabrir</button><button type="button" onClick={() => void remove(task)} disabled={Boolean(actionId) || saving} className="min-h-10 rounded-lg border border-red-300/40 px-3 py-2 text-xs uppercase text-red-100 hover:bg-red-900/50 disabled:opacity-50">Eliminar</button></div></article>)}</div>
       </section>
     </main>
   );

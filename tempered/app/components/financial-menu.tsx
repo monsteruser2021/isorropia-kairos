@@ -5,6 +5,7 @@ const financialApps = [
   { href: "/distribucion", label: "Distribuciones" },
   { href: "/balance-bs", label: "Balance Bs" },
   { href: "/balance-dolares", label: "Balance $" },
+  { href: "/deudas", label: "Deudas pendientes" },
   { href: "/transfers", label: "Transferencias" },
 ];
 

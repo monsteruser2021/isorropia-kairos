@@ -1,27 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { signOut, onAuthStateChanged } from "firebase/auth";
+import { useEffect } from "react";
+import { signOut } from "firebase/auth";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
+import { SessionProvider, notifySessionChanged, useSession } from "./session-context";
 
 const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
 const activityEvents = ["mousemove", "mousedown", "keydown", "touchstart", "scroll"];
-
-function hasSessionCookie() {
-  return document.cookie.split("; ").some((cookie) => cookie.startsWith("tempered_session=authenticated"));
-}
 
 function clearSessionCookies() {
   document.cookie = "tempered_session=; Max-Age=0; path=/";
   document.cookie = "tempered_user_id=; Max-Age=0; path=/";
 }
 
-export default function SessionShell({ children }: { children: React.ReactNode }) {
+function SessionChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [authenticated, setAuthenticated] = useState(false);
+  const { authenticated } = useSession();
   const isLoginPage = pathname === "/";
   const isMainMenu = pathname === "/menu";
   const theme = pathname === "/" || pathname === "/menu"
@@ -33,13 +30,6 @@ export default function SessionShell({ children }: { children: React.ReactNode }
       : pathname.startsWith("/herramientas") || pathname.startsWith("/utilidades")
         ? "theme-tools"
         : "theme-isorropia";
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setAuthenticated(Boolean(firebaseUser) || hasSessionCookie());
-    });
-    return unsubscribe;
-  }, []);
 
   useEffect(() => {
     if (isLoginPage || !authenticated) return;
@@ -54,6 +44,7 @@ export default function SessionShell({ children }: { children: React.ReactNode }
         await signOut(auth);
       } finally {
         clearSessionCookies();
+        notifySessionChanged();
         router.replace("/");
       }
     };
@@ -81,6 +72,7 @@ export default function SessionShell({ children }: { children: React.ReactNode }
       await signOut(auth);
     } finally {
       clearSessionCookies();
+      notifySessionChanged();
       router.replace("/");
     }
   };
@@ -107,4 +99,8 @@ export default function SessionShell({ children }: { children: React.ReactNode }
       {children}
     </div>
   );
+}
+
+export default function SessionShell({ children }: { children: React.ReactNode }) {
+  return <SessionProvider><SessionChrome>{children}</SessionChrome></SessionProvider>;
 }

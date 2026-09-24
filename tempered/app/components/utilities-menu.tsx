@@ -8,6 +8,12 @@ const utilities = [
     action: "Abrir utilidad",
   },
   {
+    href: "/utilidades/compras",
+    title: "Compras / Shopping List",
+    description: "Registra artículos, precios en Bs o dólares y fechas límite.",
+    action: "Abrir utilidad",
+  },
+  {
     href: "/utilidades/notas",
     title: "Notas",
     description: "Espacio reservado para notas rápidas.",
