@@ -81,14 +81,14 @@ function SessionChrome({ children }: { children: React.ReactNode }) {
 
   return (
     <div key={pathname} className={`theme-root page-enter ${theme}`}>
-      {!isLoginPage && !isMainMenu && authenticated && (
+      {!isLoginPage && authenticated && (
         <nav className="flex w-full items-center justify-between gap-3 px-4 pt-4 sm:px-6" aria-label="Navegación de sesión">
-          <Link
-            href="/menu"
-            className="min-h-11 transform-gpu rounded-xl border border-white/45 bg-black/35 px-4 py-2 text-xs uppercase text-white shadow-lg shadow-black/20 transition-[transform,background-color,border-color] duration-150 ease-out hover:border-white hover:bg-white/15 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white"
-          >
-            <span aria-hidden="true">←</span> Volver al menú principal
-          </Link>
+          {!isMainMenu && <Link
+              href="/menu"
+              className="min-h-11 transform-gpu rounded-xl border border-white/45 bg-black/35 px-4 py-2 text-xs uppercase text-white shadow-lg shadow-black/20 transition-[transform,background-color,border-color] duration-150 ease-out hover:border-white hover:bg-white/15 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white"
+            >
+              <span aria-hidden="true">←</span> Volver al menú principal
+            </Link>}
           <button
             type="button"
             onClick={() => void handleLogout()}
