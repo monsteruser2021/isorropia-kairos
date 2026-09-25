@@ -5,11 +5,13 @@ import { useEffect, useState } from "react";
 import { addDoc, collection, deleteDoc, doc, onSnapshot, query, updateDoc, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import BackButton from "./back-button";
-import { readSessionUserId, type Habit, weekDays } from "./grobit-data";
+import { type Habit, weekDays } from "./grobit-data";
+import { useSession } from "./session-context";
 
 const allDays = weekDays.map((day) => day.value);
 
 export default function GrobitAdmin() {
+  const { userId } = useSession();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [name, setName] = useState("");
   const [days, setDays] = useState(allDays);
@@ -19,8 +21,6 @@ export default function GrobitAdmin() {
   const [saving, setSaving] = useState(false);
   const [actionId, setActionId] = useState("");
   const [removingId, setRemovingId] = useState("");
-
-  const userId = typeof document === "undefined" ? null : readSessionUserId();
 
   useEffect(() => {
     if (!userId) return;

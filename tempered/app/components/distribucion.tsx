@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import BackButton from "./back-button";
-import { onAuthStateChanged, type User } from "firebase/auth";
 import {
   collection,
   deleteDoc,
@@ -17,7 +16,8 @@ import {
   where,
   writeBatch,
 } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
+import { useSession } from "./session-context";
 
 const categories = [
   "Gastos básicos", "Fondo de emergencia", "Inversión", "Ahorro",
@@ -38,13 +38,11 @@ type Distribution = {
 type PreviousIncome = { totalBs: number; percentages: Record<string, number> };
 type PreviousTransaction = { category: string; incomeBs: number; expenseBs: number };
 
-const getSessionUserId = () => document.cookie.split("; ").find((item) => item.startsWith("tempered_user_id="))?.split("=")[1] ?? null;
 const periodValue = (year: number, month: number) => year * 12 + month;
 const periodDocumentId = (userId: string, year: number, month: number) => `period-${encodeURIComponent(userId)}-${year}-${String(month + 1).padStart(2, "0")}`;
 
 export default function Distribucion() {
-  const [user, setUser] = useState<User | null>(null);
-  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+  const { userId: currentUserId } = useSession();
   const [distributions, setDistributions] = useState<Distribution[]>([]);
   const [month, setMonth] = useState(new Date().getMonth());
   const [year, setYear] = useState(new Date().getFullYear());
@@ -57,13 +55,6 @@ export default function Distribucion() {
   const currentMonth = today.getMonth();
   const currentPeriod = periodValue(currentYear, currentMonth);
   const years = Array.from({ length: Math.max(1, currentYear - 2021 + 1) }, (_, index) => 2021 + index);
-
-  useEffect(() => onAuthStateChanged(auth, (authenticatedUser) => {
-    setUser(authenticatedUser);
-    setSessionUserId(authenticatedUser ? null : getSessionUserId());
-  }), []);
-
-  const currentUserId = user?.uid ?? sessionUserId;
 
   const createRollover = useCallback(async (available: Distribution[], userId: string) => {
     if (rolloverInProgress.current) return;

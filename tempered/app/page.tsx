@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { notifySessionChanged } from "./components/session-context";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function Home() {
   const router = useRouter();
@@ -17,31 +16,15 @@ export default function Home() {
     setErrorMsg("");
 
     const formData = new FormData(e.currentTarget);
-    const usernameInput = formData.get("username") as string;
+    const emailInput = formData.get("email") as string;
     const passwordInput = formData.get("password") as string;
 
     try {
-      const userRef = doc(db, "users", "cesc.8");
-      const userSnap = await getDoc(userRef);
-
-      if (userSnap.exists()) {
-        const userData = userSnap.data();
-
-        if (userData.username === usernameInput && userData.password === passwordInput) {
-          document.cookie = "tempered_session=authenticated; path=/; SameSite=Lax";
-          document.cookie = "tempered_user_id=cesc.8; path=/; SameSite=Lax";
-          window.localStorage.setItem("tempered_user_id", "cesc.8");
-          notifySessionChanged();
-          router.push("/menu");
-        } else {
-          setErrorMsg("Credenciales incorrectas. Verifica tus datos.");
-        }
-      } else {
-        setErrorMsg("No se encontró el usuario administrador en la base de datos.");
-      }
+      await signInWithEmailAndPassword(auth, emailInput.trim().toLowerCase(), passwordInput);
+      router.push("/menu");
     } catch (error) {
       console.error("Error al iniciar sesión:", error);
-      setErrorMsg("Ocurrió un error de conexión con la base de datos.");
+      setErrorMsg("Credenciales incorrectas. Verifica tus datos.");
     } finally {
       setLoading(false);
     }
@@ -64,19 +47,19 @@ export default function Home() {
 
             <div>
               <label
-                htmlFor="username"
+                htmlFor="email"
                 className="mb-2 block text-xs font-medium text-white/85 sm:text-sm"
               >
-                Usuario
+                Correo electrónico
               </label>
               <input
-                id="username"
-                name="username"
-                type="text"
-                autoComplete="username"
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
                 required
                 className="min-h-12 w-full rounded-xl border border-white/25 bg-black/20 px-4 py-3 text-base text-white outline-none transition placeholder:text-sm placeholder:text-white/45 focus:border-white/70 focus:bg-black/30 focus:ring-2 focus:ring-white/20 sm:text-sm"
-                placeholder="Ingresa tu usuario"
+                placeholder="Ingresa tu correo electrónico"
               />
             </div>
 

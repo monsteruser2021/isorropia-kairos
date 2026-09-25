@@ -22,7 +22,7 @@ const applications = [
   {
     href: "/mawina",
     name: "Mawina Kairos",
-    description: "Rutinas, próximamente",
+    description: "Bloques de tiempo y ejecución",
     className: "border-[#620404]/70 bg-linear-to-br from-[#620404]/80 via-[#620404]/25 to-[#121212] hover:from-[#620404] hover:via-[#620404]/35",
   },
   {
@@ -52,7 +52,7 @@ export default function Main() {
                 <>
                   <span className="block max-w-full wrap-break-word text-md uppercase tracking-[0.04em] text-white sm:text-lg sm:tracking-[0.06em]">{application.name}</span>
                   <span className="mt-4 block max-w-full wrap-break-word text-sm text-white/60">{application.description}</span>
-                  <span className="mt-10 block max-w-full wrap-break-word text-xs uppercase text-white/45">{application.href === "/mawina" ? "Vista previa" : "Abrir aplicación"}</span>
+                  <span className="mt-10 block max-w-full wrap-break-word text-xs uppercase text-white/45">Abrir aplicación</span>
                 </>
               );
               const className = `flex min-h-44 min-w-0 w-full max-w-full transform-gpu flex-col items-start rounded-2xl border p-5 text-left transition-[transform,background-color,border-color] duration-200 ease-out hover:-translate-y-0.5 active:scale-95 sm:p-6 ${application.className}`;

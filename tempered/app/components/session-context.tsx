@@ -2,41 +2,53 @@
 
 import { onAuthStateChanged } from "firebase/auth";
 import { createContext, useContext, useEffect, useState } from "react";
-import { auth } from "@/lib/firebase";
-import { readSessionUserId } from "./grobit-data";
-
-const SESSION_EVENT = "tempered-session-changed";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 
 type SessionContextValue = {
   userId: string | null;
   authenticated: boolean;
+  loading: boolean;
 };
 
-const SessionContext = createContext<SessionContextValue>({ userId: null, authenticated: false });
-
-export function notifySessionChanged() {
-  window.dispatchEvent(new Event(SESSION_EVENT));
-}
+const SessionContext = createContext<SessionContextValue>({ userId: null, authenticated: false, loading: true });
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [firebaseAuthenticated, setFirebaseAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const syncSession = () => setUserId(readSessionUserId());
-    syncSession();
-    const unsubscribe = onAuthStateChanged(auth, (user) => setFirebaseAuthenticated(Boolean(user)));
-    window.addEventListener(SESSION_EVENT, syncSession);
-    window.addEventListener("storage", syncSession);
+    let active = true;
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setFirebaseAuthenticated(Boolean(user));
+      setLoading(false);
+      if (!user) {
+        setUserId(null);
+        document.cookie = "tempered_user_id=; Max-Age=0; path=/";
+        return;
+      }
+
+      void getDocs(query(collection(db, "users"), where("authUid", "==", user.uid)))
+        .then((snapshot) => {
+          if (!active) return;
+          const legacyUserId = snapshot.docs[0]?.id ?? user.uid;
+          setUserId(legacyUserId);
+          document.cookie = `tempered_user_id=${encodeURIComponent(legacyUserId)}; path=/; SameSite=Lax`;
+        })
+        .catch((error) => {
+          console.error("No se pudo resolver el usuario de Tempered:", error);
+          if (active) setUserId(null);
+        });
+    });
     return () => {
+      active = false;
       unsubscribe();
-      window.removeEventListener(SESSION_EVENT, syncSession);
-      window.removeEventListener("storage", syncSession);
     };
   }, []);
 
   return (
-    <SessionContext.Provider value={{ userId, authenticated: Boolean(userId) || firebaseAuthenticated }}>
+    <SessionContext.Provider value={{ userId, authenticated: firebaseAuthenticated, loading }}>
       {children}
     </SessionContext.Provider>
   );

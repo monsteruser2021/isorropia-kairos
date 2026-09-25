@@ -5,20 +5,19 @@ import { signOut } from "firebase/auth";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
-import { SessionProvider, notifySessionChanged, useSession } from "./session-context";
+import { SessionProvider, useSession } from "./session-context";
 
 const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
 const activityEvents = ["mousemove", "mousedown", "keydown", "touchstart", "scroll"];
 
 function clearSessionCookies() {
-  document.cookie = "tempered_session=; Max-Age=0; path=/";
   document.cookie = "tempered_user_id=; Max-Age=0; path=/";
 }
 
 function SessionChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { authenticated } = useSession();
+  const { authenticated, loading } = useSession();
   const isLoginPage = pathname === "/";
   const isMainMenu = pathname === "/menu";
   const theme = pathname === "/" || pathname === "/menu"
@@ -46,7 +45,6 @@ function SessionChrome({ children }: { children: React.ReactNode }) {
         await signOut(auth);
       } finally {
         clearSessionCookies();
-        notifySessionChanged();
         router.replace("/");
       }
     };
@@ -69,12 +67,15 @@ function SessionChrome({ children }: { children: React.ReactNode }) {
     };
   }, [authenticated, isLoginPage, router]);
 
+  useEffect(() => {
+    if (!isLoginPage && !loading && !authenticated) router.replace("/");
+  }, [authenticated, isLoginPage, loading, router]);
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
     } finally {
       clearSessionCookies();
-      notifySessionChanged();
       router.replace("/");
     }
   };

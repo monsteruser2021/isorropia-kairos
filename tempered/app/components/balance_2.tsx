@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { onAuthStateChanged, type User } from "firebase/auth";
 import {
   addDoc,
   collection,
@@ -13,8 +12,9 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import BackButton from "./back-button";
+import { useSession } from "./session-context";
 
 const categories = [
   "Inversiones",
@@ -37,16 +37,10 @@ type DollarTransaction = {
   isTransfer: boolean;
 };
 
-const readSessionUserId = () =>
-  document.cookie
-    .split("; ")
-    .find((cookie) => cookie.startsWith("tempered_user_id="))
-    ?.split("=")[1] ?? null;
   const isTransferRecord = (data: Record<string, unknown>) => data.isTransfer === true || Boolean(data.transferId) || /^(Transf\. a|Prov\. de)/i.test(String(data.description ?? ""));
 
 export default function BalanceDolares() {
-  const [user, setUser] = useState<User | null>(null);
-  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+  const { userId: currentUserId } = useSession();
   const [distributions, setDistributions] = useState<Distribution[]>([]);
   const [selectedId, setSelectedId] = useState("");
   const [transactions, setTransactions] = useState<DollarTransaction[]>([]);
@@ -58,13 +52,6 @@ export default function BalanceDolares() {
   const [incomeUsd, setIncomeUsd] = useState("");
   const [expenseUsd, setExpenseUsd] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-
-  useEffect(() => onAuthStateChanged(auth, (authenticatedUser) => {
-    setUser(authenticatedUser);
-    setSessionUserId(authenticatedUser ? null : readSessionUserId());
-  }), []);
-
-  const currentUserId = user?.uid ?? sessionUserId;
 
   useEffect(() => {
     if (!currentUserId) return;

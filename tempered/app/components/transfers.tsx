@@ -2,7 +2,6 @@
 
 import BackButton from "./back-button";
 import { useEffect, useMemo, useState } from "react";
-import { onAuthStateChanged, type User } from "firebase/auth";
 import {
   collection,
   doc,
@@ -12,7 +11,8 @@ import {
   where,
   writeBatch,
 } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
+import { useSession } from "./session-context";
 
 const bsCategories = [
   "Gastos básicos", "Fondo de emergencia", "Inversión", "Ahorro",
@@ -28,11 +28,8 @@ type Distribution = { id: string; month: number; year: number };
 type Transaction = { category: string; income: number; expense: number };
 type Income = { total: number; percentages: Record<string, number> };
 
-const sessionUserId = () => document.cookie.split("; ").find((item) => item.startsWith("tempered_user_id="))?.split("=")[1] ?? null;
-
 export default function Transfers() {
-  const [user, setUser] = useState<User | null>(null);
-  const [fallbackUserId, setFallbackUserId] = useState<string | null>(null);
+  const { userId: currentUserId } = useSession();
   const [currency, setCurrency] = useState<Currency>("bs");
   const [currencyDirection, setCurrencyDirection] = useState<"forward" | "back">("forward");
   const [distributions, setDistributions] = useState<Distribution[]>([]);
@@ -46,12 +43,6 @@ export default function Transfers() {
   const [errorMsg, setErrorMsg] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => onAuthStateChanged(auth, (authenticatedUser) => {
-    setUser(authenticatedUser);
-    setFallbackUserId(authenticatedUser ? null : sessionUserId());
-  }), []);
-
-  const currentUserId = user?.uid ?? fallbackUserId;
   const categories = currency === "bs" ? bsCategories : dollarCategories;
   const transactionCollection = currency === "bs" ? "transactions" : "dollarTransactions";
   const incomeField = currency === "bs" ? "incomeBs" : "incomeUsd";

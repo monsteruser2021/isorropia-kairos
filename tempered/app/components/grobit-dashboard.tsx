@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { collection, doc, onSnapshot, query, setDoc, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { dayOfWeek, displayDate, formatDate, getMonthDates, readSessionUserId, type Habit } from "./grobit-data";
+import { dayOfWeek, displayDate, formatDate, getMonthDates, type Habit } from "./grobit-data";
+import { useSession } from "./session-context";
 
 type Completion = { habitId: string; date: string; completed: boolean };
 
 export default function GrobitDashboard() {
+  const { userId } = useSession();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [completions, setCompletions] = useState<Completion[]>([]);
   const [error, setError] = useState("");
@@ -17,8 +19,6 @@ export default function GrobitDashboard() {
   const today = new Date();
   const todayString = formatDate(today);
   const monthDates = getMonthDates(today);
-  const userId = typeof document === "undefined" ? null : readSessionUserId();
-
   useEffect(() => {
     if (!userId) return;
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { onAuthStateChanged, type User } from "firebase/auth";
 import {
   addDoc,
   collection,
@@ -11,8 +10,9 @@ import {
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import BackButton from "./back-button";
+import { useSession } from "./session-context";
 
 const categories = [
   "Gastos básicos",
@@ -38,8 +38,7 @@ const emptyPercentages = (): Percentages =>
   Object.fromEntries(categories.map((category) => [category, 0]));
 
 export default function DistribucionDetalle({ distributionId }: Props) {
-  const [user, setUser] = useState<User | null>(null);
-  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+  const { userId: currentUserId } = useSession();
   const [isOwner, setIsOwner] = useState(false);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [description, setDescription] = useState("");
@@ -49,21 +48,6 @@ export default function DistribucionDetalle({ distributionId }: Props) {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (authenticatedUser) => {
-      setUser(authenticatedUser);
-      if (!authenticatedUser) {
-        const cookie = document.cookie
-          .split("; ")
-          .find((item) => item.startsWith("tempered_user_id="));
-        setSessionUserId(cookie?.split("=")[1] ?? null);
-      }
-    });
-    return unsubscribe;
-  }, []);
-
-  const currentUserId = user?.uid ?? sessionUserId;
 
   useEffect(() => {
     if (!currentUserId) return;
