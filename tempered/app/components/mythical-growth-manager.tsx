@@ -8,6 +8,7 @@ import { useSession } from "./session-context";
 import BackButton from "./back-button";
 
 type Currency = "Bs" | "$";
+type Condition = "Nuevo" | "Usado";
 type ProjectStatus = "evaluation" | "process" | "liquidated" | "discarded";
 type Investment = {
   id: string;
@@ -17,6 +18,10 @@ type Investment = {
   currency: Currency;
   cost: number;
   saleEstimate: number;
+  condition: Condition;
+  quantity: number;
+  remainingStock: number;
+  soldUnits: number;
   status: ProjectStatus;
 };
 
@@ -35,6 +40,14 @@ function calculateProfit(cost: number, saleEstimate: number) {
   return saleEstimate - cost;
 }
 
+function totalCost(investment: Investment) {
+  return investment.cost * investment.quantity;
+}
+
+function totalSaleEstimate(investment: Investment) {
+  return investment.saleEstimate * investment.quantity;
+}
+
 function calculateRoi(cost: number, saleEstimate: number) {
   return cost > 0 ? (calculateProfit(cost, saleEstimate) / cost) * 100 : 0;
 }
@@ -47,6 +60,8 @@ export default function MythicalGrowthManager() {
   const [currency, setCurrency] = useState<Currency>("Bs");
   const [cost, setCost] = useState("");
   const [saleEstimate, setSaleEstimate] = useState("");
+  const [condition, setCondition] = useState<Condition>("Nuevo");
+  const [quantity, setQuantity] = useState("1");
   const [status, setStatus] = useState<ProjectStatus>("evaluation");
   const [editingId, setEditingId] = useState("");
   const [saving, setSaving] = useState(false);
@@ -65,8 +80,12 @@ export default function MythicalGrowthManager() {
           title: String(data.title ?? ""),
           category: String(data.category ?? "Otros"),
           currency: data.currency === "$" ? "$" : "Bs",
-          cost: Number(data.cost ?? 0),
-          saleEstimate: Number(data.saleEstimate ?? 0),
+          cost: Number(data.unitCost ?? data.cost ?? 0),
+          saleEstimate: Number(data.unitSalePrice ?? data.saleEstimate ?? 0),
+          condition: data.condition === "Usado" ? "Usado" : "Nuevo",
+          quantity: Math.max(1, Math.floor(Number(data.quantity ?? 1))),
+          remainingStock: Math.max(0, Math.floor(Number(data.remainingStock ?? data.quantity ?? 1))),
+          soldUnits: Math.max(0, Math.floor(Number(data.soldUnits ?? 0))),
           status: statuses.some((option) => option.value === data.status) ? data.status as ProjectStatus : "evaluation",
         };
       })),
@@ -75,11 +94,11 @@ export default function MythicalGrowthManager() {
   }, [userId]);
 
   const committed = useMemo(() => investments.filter((investment) => investment.status !== "discarded").reduce<Totals>((totals, investment) => {
-    totals[investment.currency] += investment.cost;
+    totals[investment.currency] += totalCost(investment);
     return totals;
   }, { ...emptyTotals }), [investments]);
   const projectedProfit = useMemo(() => investments.filter((investment) => investment.status !== "discarded").reduce<Totals>((totals, investment) => {
-    totals[investment.currency] += calculateProfit(investment.cost, investment.saleEstimate);
+    totals[investment.currency] += calculateProfit(totalCost(investment), totalSaleEstimate(investment));
     return totals;
   }, { ...emptyTotals }), [investments]);
   const activeInvestments = useMemo(() => investments
@@ -90,17 +109,19 @@ export default function MythicalGrowthManager() {
     .sort((a, b) => statusPriority[a.status] - statusPriority[b.status] || a.title.localeCompare(b.title)), [investments]);
 
   const resetForm = () => {
-    setTitle(""); setCategory(categories[0]); setCurrency("Bs"); setCost(""); setSaleEstimate(""); setStatus("evaluation"); setEditingId("");
+    setTitle(""); setCategory(categories[0]); setCurrency("Bs"); setCost(""); setSaleEstimate(""); setCondition("Nuevo"); setQuantity("1"); setStatus("evaluation"); setEditingId("");
   };
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const numericCost = Number(cost);
     const numericSaleEstimate = Number(saleEstimate);
-    if (!userId || !title.trim() || !Number.isFinite(numericCost) || numericCost <= 0 || !Number.isFinite(numericSaleEstimate) || numericSaleEstimate < 0 || saving) return;
+    const numericQuantity = Number(quantity);
+    const currentInvestment = investments.find((investment) => investment.id === editingId);
+    if (!userId || !title.trim() || !Number.isFinite(numericCost) || numericCost <= 0 || !Number.isFinite(numericSaleEstimate) || numericSaleEstimate < 0 || !Number.isInteger(numericQuantity) || numericQuantity < 1 || (currentInvestment && numericQuantity < currentInvestment.soldUnits) || saving) return;
     setSaving(true); setError("");
     try {
-      const data = { title: title.trim(), category, currency, cost: numericCost, saleEstimate: numericSaleEstimate, status, updatedAt: serverTimestamp() };
+      const data = { title: title.trim(), category, currency, cost: numericCost, saleEstimate: numericSaleEstimate, unitCost: numericCost, unitSalePrice: numericSaleEstimate, condition, quantity: numericQuantity, remainingStock: currentInvestment ? numericQuantity - currentInvestment.soldUnits : numericQuantity, soldUnits: currentInvestment?.soldUnits ?? 0, status, updatedAt: serverTimestamp() };
       if (editingId) await updateDoc(doc(db, "mythicalInvestments", editingId), data);
       else await addDoc(collection(db, "mythicalInvestments"), { ...data, userId, createdAt: serverTimestamp() });
       resetForm();
@@ -139,7 +160,7 @@ export default function MythicalGrowthManager() {
   };
 
   const edit = (investment: Investment) => {
-    setEditingId(investment.id); setTitle(investment.title); setCategory(investment.category); setCurrency(investment.currency); setCost(String(investment.cost)); setSaleEstimate(String(investment.saleEstimate)); setStatus(investment.status);
+    setEditingId(investment.id); setTitle(investment.title); setCategory(investment.category); setCurrency(investment.currency); setCost(String(investment.cost)); setSaleEstimate(String(investment.saleEstimate)); setCondition(investment.condition); setQuantity(String(investment.quantity)); setStatus(investment.status);
   };
 
   const previewCost = Number(cost) || 0;

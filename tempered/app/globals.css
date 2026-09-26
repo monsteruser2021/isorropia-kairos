@@ -149,6 +149,7 @@ body {
 .theme-mythical {
   --theme-accent: #4a0e4e;
   --theme-accent-soft: rgb(74 14 78 / 0.2);
+  background: linear-gradient(180deg, #3b0764 0%, #2b1241 30%, #1b1420 68%, #121212 100%);
 }
 
 .theme-tools {
