@@ -147,7 +147,7 @@ export default function BalanceDolares() {
     const transaction = transactions.find((item) => item.id === id);
     if (transaction?.isTransfer) {
       setPendingDeleteId(null);
-      setErrorMsg("Las transferencias no se pueden eliminar desde el balance.");
+      setErrorMsg("Los movimientos vinculados no se pueden eliminar por separado.");
       return;
     }
     try {

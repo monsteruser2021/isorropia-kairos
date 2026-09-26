@@ -127,8 +127,8 @@ body {
 }
 
 .theme-tempered {
-  --theme-accent: #2e4484;
-  --theme-accent-soft: rgb(46 68 132 / 0.16);
+  --theme-accent: #121212;
+  --theme-accent-soft: rgb(255 255 255 / 0.12);
 }
 
 .theme-isorropia {
@@ -152,8 +152,8 @@ body {
 }
 
 .theme-tools {
-  --theme-accent: #000000;
-  --theme-accent-soft: rgb(255 255 255 / 0.12);
+  --theme-accent: #0d9488;
+  --theme-accent-soft: rgb(13 148 136 / 0.18);
 }
 
 .theme-isorropia .text-\[\#adc0fa\] {

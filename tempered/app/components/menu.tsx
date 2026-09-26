@@ -17,7 +17,7 @@ const applications = [
     href: "/mythical-growth",
     name: "Mythical Growth",
     description: "Inversiones, reventas y crecimiento",
-    className: "border-[#4a0e4e]/80 bg-linear-to-br from-[#4a0e4e] via-[#3b0764]/45 to-[#121212] hover:from-[#5e1764] hover:via-[#3b0764]/60",
+    className: "border-[#3b0764]/80 bg-linear-to-br from-[#3b0764] via-[#3b0764]/45 to-[#121212] hover:from-[#4a0e4e] hover:via-[#3b0764]/60",
   },
   {
     href: "/mawina",
@@ -29,7 +29,7 @@ const applications = [
     href: "/utilidades",
     name: "Utilidades",
     description: "Utilidades de Tempered",
-    className: "border-white/70 bg-linear-to-br from-black via-black/90 to-white/10 hover:from-white/15 hover:via-black",
+    className: "border-[#0d9488]/70 bg-linear-to-br from-[#0d9488]/80 via-[#0d9488]/25 to-[#121212] hover:from-[#0d9488] hover:via-[#0d9488]/35",
   },
 ];
 
@@ -39,7 +39,7 @@ export default function Main() {
       <section className="flex min-h-[70vh] w-[calc(100%-2rem)] max-w-5xl items-center justify-center rounded-3xl border border-white/25 bg-white/10 p-5 shadow-2xl shadow-black/30 backdrop-blur-xl sm:w-[90vw] sm:p-12">
         <div className="w-full max-w-4xl min-w-0">
           <p className="text-center text-xs uppercase tracking-[0.16em] text-white/50">Panel de aplicaciones</p>
-          <h1 className="font-display mt-5 text-center text-3xl uppercase tracking-widest text-[#adc0fa] sm:text-5xl">
+          <h1 className="font-display mt-5 text-center text-3xl uppercase tracking-widest text-white sm:text-5xl">
             Tempered
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-center text-sm leading-6 text-white/65">

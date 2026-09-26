@@ -19,6 +19,8 @@ const bsCategories = [
   "Transporte", "Caridad", "Lujo/gustos", "Otros gastos",
 ];
 const dollarCategories = ["Inversiones", "Ahorro", "Fondo de emergencia"];
+const exchangeOriginCategories = ["Ahorro", "Inversión"];
+const exchangeDestinationCategories = ["Ahorro", "Inversiones"];
 const monthNames = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
@@ -27,6 +29,7 @@ type Currency = "bs" | "usd";
 type Distribution = { id: string; month: number; year: number };
 type Transaction = { category: string; income: number; expense: number };
 type Income = { total: number; percentages: Record<string, number> };
+type ExchangeTransaction = { category: string; incomeBs: number; expenseBs: number };
 
 export default function Transfers() {
   const { userId: currentUserId } = useSession();
@@ -36,10 +39,18 @@ export default function Transfers() {
   const [distributionId, setDistributionId] = useState("");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
+  const [exchangeTransactions, setExchangeTransactions] = useState<ExchangeTransaction[]>([]);
+  const [exchangeIncomes, setExchangeIncomes] = useState<Income[]>([]);
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [exchangeDate, setExchangeDate] = useState(new Date().toISOString().slice(0, 10));
+  const [exchangeOrigin, setExchangeOrigin] = useState("");
+  const [exchangeDestination, setExchangeDestination] = useState("");
+  const [exchangeDescription, setExchangeDescription] = useState("");
+  const [exchangeUsd, setExchangeUsd] = useState("");
+  const [exchangeBs, setExchangeBs] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -72,12 +83,29 @@ export default function Transfers() {
     return () => { stopTransactions(); stopIncomes(); };
   }, [currency, distributionId, expenseField, incomeField, transactionCollection]);
 
+  useEffect(() => {
+    if (!distributionId) return;
+    const stopTransactions = onSnapshot(collection(db, "distributions", distributionId, "transactions"), (snapshot) => {
+      setExchangeTransactions(snapshot.docs.map((item) => ({ category: String(item.data().category ?? ""), incomeBs: Number(item.data().incomeBs ?? 0), expenseBs: Number(item.data().expenseBs ?? 0) })));
+    }, () => setErrorMsg("No se pudieron cargar los saldos en bolívares."));
+    const stopIncomes = onSnapshot(collection(db, "distributions", distributionId, "incomes"), (snapshot) => {
+      setExchangeIncomes(snapshot.docs.map((item) => ({ total: Number(item.data().totalBs ?? 0), percentages: (item.data().percentages ?? {}) as Record<string, number> })));
+    }, () => setErrorMsg("No se pudieron cargar los ingresos distribuidos."));
+    return () => { stopTransactions(); stopIncomes(); };
+  }, [distributionId]);
+
   const balances = useMemo(() => categories.map((category) => {
     const manual = transactions.filter((item) => item.category === category).reduce((sum, item) => sum + item.income - item.expense, 0);
     const initial = currency === "bs" ? incomes.reduce((sum, income) => sum + income.total * Number(income.percentages[category] ?? 0) / 100, 0) : 0;
     return { category, balance: initial + manual };
   }), [categories, currency, incomes, transactions]);
   const originBalance = balances.find((item) => item.category === origin)?.balance ?? 0;
+  const exchangeBalances = useMemo(() => exchangeOriginCategories.map((category) => {
+    const initial = exchangeIncomes.reduce((sum, income) => sum + income.total * Number(income.percentages[category] ?? 0) / 100, 0);
+    const manual = exchangeTransactions.filter((item) => item.category === category).reduce((sum, item) => sum + item.incomeBs - item.expenseBs, 0);
+    return { category, balance: initial + manual };
+  }), [exchangeIncomes, exchangeTransactions]);
+  const exchangeOriginBalance = exchangeBalances.find((item) => item.category === exchangeOrigin)?.balance ?? 0;
   const selectedDistribution = distributions.find((item) => item.id === distributionId);
   const lastDay = selectedDistribution ? new Date(selectedDistribution.year, selectedDistribution.month + 1, 0).getDate() : 0;
   const minDate = selectedDistribution ? `${selectedDistribution.year}-${String(selectedDistribution.month + 1).padStart(2, "0")}-01` : "";
@@ -116,6 +144,32 @@ export default function Transfers() {
     finally { setSaving(false); }
   };
 
+  const executeCurrencyExchange = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const spentBs = Number(exchangeBs);
+    const purchasedUsd = Number(exchangeUsd);
+    if (!distributionId || !exchangeOrigin || !exchangeDestination || !exchangeDescription.trim() || !Number.isFinite(spentBs) || !Number.isFinite(purchasedUsd) || spentBs <= 0 || purchasedUsd <= 0 || spentBs > exchangeOriginBalance) {
+      setErrorMsg(`Completa la compra con montos positivos. El saldo disponible en ${exchangeOrigin || "la categoría"} es Bs ${exchangeOriginBalance.toFixed(2)}.`);
+      return;
+    }
+    if (!exchangeDate || exchangeDate < minDate || exchangeDate > maxDate) {
+      setErrorMsg("La fecha debe pertenecer al periodo seleccionado.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const batch = writeBatch(db);
+      const originRef = doc(collection(db, "distributions", distributionId, "transactions"));
+      const destinationRef = doc(collection(db, "distributions", distributionId, "dollarTransactions"));
+      const linkedData = { transferId: originRef.id, isTransfer: true, isCurrencyExchange: true, date: exchangeDate, description: exchangeDescription.trim(), updatedAt: serverTimestamp() };
+      batch.set(originRef, { ...linkedData, category: exchangeOrigin, incomeBs: 0, expenseBs: spentBs, createdAt: serverTimestamp() });
+      batch.set(destinationRef, { ...linkedData, category: exchangeDestination, incomeUsd: purchasedUsd, expenseUsd: 0, createdAt: serverTimestamp() });
+      await batch.commit();
+      setExchangeDescription(""); setExchangeUsd(""); setExchangeBs(""); setErrorMsg("");
+    } catch { setErrorMsg("No se pudo registrar la compra de divisas."); }
+    finally { setSaving(false); }
+  };
+
   if (!currentUserId) return <Message text="Inicia sesión para acceder a Transferencias." />;
   return (
     <main className="flex min-h-screen w-full items-center justify-center px-4 py-8 sm:px-6 sm:py-10">
@@ -133,6 +187,19 @@ export default function Transfers() {
             <div className="rounded-2xl border border-white/15 bg-black/15 p-4"><h2 className="text-sm uppercase text-white/80">Saldos disponibles</h2><div className="mt-4 space-y-2">{balances.map((item) => <div key={item.category} className="flex justify-between gap-3 text-sm"><span>{item.category}</span><span className={item.balance > 0 ? "text-emerald-300" : "text-white/50"}>{symbol} {item.balance.toFixed(2)}</span></div>)}</div></div>
             <form onSubmit={executeTransfer} className="rounded-2xl border border-white/15 bg-black/15 p-4"><h2 className="text-sm uppercase text-white/80">Nueva transferencia</h2><div className="mt-4 grid gap-4"><label className="text-xs uppercase text-white/70">Origen<select required value={origin} onChange={(event) => { setOrigin(event.target.value); setDestination(""); }} className="mt-2 min-h-12 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-4 py-3 text-sm text-white"><option value="">Selecciona una categoría</option>{availableOrigins.map((item) => <option key={item.category} value={item.category}>{item.category} ({symbol} {item.balance.toFixed(2)})</option>)}</select></label><label className="text-xs uppercase text-white/70">Destino<select required value={destination} onChange={(event) => setDestination(event.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-4 py-3 text-sm text-white"><option value="">Selecciona una categoría</option>{destinationOptions.map((category) => <option key={category} value={category}>{category}</option>)}</select></label><div className="grid gap-4 sm:grid-cols-2"><label className="text-xs uppercase text-white/70">Monto ({symbol})<input required type="number" min="0.01" max={originBalance} step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-4 py-3 text-base text-white" /></label><label className="text-xs uppercase text-white/70">Fecha<input required type="date" min={minDate} max={maxDate} value={date} onChange={(event) => setDate(event.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-4 py-3 text-base text-white" /></label></div><button disabled={saving || availableOrigins.length === 0} type="submit" className="min-h-12 rounded-xl bg-[#adc0fa] px-4 py-3 text-xs uppercase text-[#121212] hover:bg-white disabled:cursor-not-allowed disabled:opacity-50">{saving ? "Registrando..." : "Transferir"}</button></div></form>
           </div>
+          <form onSubmit={executeCurrencyExchange} className="mt-6 rounded-2xl border border-white/15 bg-black/15 p-4 sm:p-5">
+            <h2 className="text-sm uppercase text-white/85">Compra de divisas</h2>
+            <p className="mt-2 text-xs text-white/50">Registra el egreso en Bs y el ingreso en dólares como movimientos vinculados y protegidos.</p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <label className="text-xs uppercase text-white/70">Fecha<input required type="date" min={minDate} max={maxDate} value={exchangeDate} onChange={(event) => setExchangeDate(event.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-3 py-3 text-sm text-white" /></label>
+              <label className="text-xs uppercase text-white/70">Descripción<input required value={exchangeDescription} onChange={(event) => setExchangeDescription(event.target.value)} placeholder="Ej. Compra de dólares en paralelo" className="mt-2 min-h-12 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-3 py-3 text-sm text-white placeholder:text-white/35" /></label>
+              <label className="text-xs uppercase text-white/70">Origen en Bs<select required value={exchangeOrigin} onChange={(event) => setExchangeOrigin(event.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-3 py-3 text-sm text-white"><option value="">Selecciona Ahorro o Inversión</option>{exchangeBalances.map((item) => <option key={item.category} value={item.category} disabled={item.balance <= 0}>{item.category} (Bs {item.balance.toFixed(2)})</option>)}</select></label>
+              <label className="text-xs uppercase text-white/70">Destino en dólares<select required value={exchangeDestination} onChange={(event) => setExchangeDestination(event.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-3 py-3 text-sm text-white"><option value="">Selecciona Ahorro o Inversiones</option>{exchangeDestinationCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
+              <label className="text-xs uppercase text-white/70">Divisas compradas ($)<input required type="number" min="0.01" step="0.01" value={exchangeUsd} onChange={(event) => setExchangeUsd(event.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-3 py-3 text-sm text-white" /></label>
+              <label className="text-xs uppercase text-white/70">Gastado (Bs)<input required type="number" min="0.01" max={exchangeOriginBalance} step="0.01" value={exchangeBs} onChange={(event) => setExchangeBs(event.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-white/25 bg-[#121212]/80 px-3 py-3 text-sm text-white" /></label>
+            </div>
+            <button disabled={saving || exchangeBalances.every((item) => item.balance <= 0)} type="submit" className="mt-4 min-h-12 rounded-xl bg-[#adc0fa] px-5 py-3 text-xs uppercase text-[#121212] hover:bg-white disabled:cursor-not-allowed disabled:opacity-50">{saving ? "Guardando..." : "Registrar compra vinculada"}</button>
+          </form>
           <p className="mx-auto mt-5 max-w-5xl text-xs text-white/50">Las transferencias se registran como egreso en el origen e ingreso en el destino dentro de la moneda seleccionada.</p>
         </div>}
       </section>
